@@ -1,0 +1,19 @@
+{
+  "name": "03_device_connectivity",
+  "version": "1.0.0",
+  "description": "A header-only Arduino/PlatformIO network library; includes cpp_logger",
+  "keywords": ["arduino", "network", "utility"],
+  "authors": [{"name": "Nayan"}],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/compilerNayan/03_device_connectivity.git"
+  },
+  "dependencies": {
+    "springbootplusplus": "https://github.com/compilerNayan/springbootplusplus.git",
+    "01_osal": "https://github.com/compilerNayan/01_osal.git",
+    "02_cpp_utils": "https://github.com/compilerNayan/02_cpp_utils.git"
+  },
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "*"
+}

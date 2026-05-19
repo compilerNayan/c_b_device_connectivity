@@ -1,0 +1,6 @@
+#ifndef WIFIHEALTHCHECKERTHREAD_INCLUDE_H
+#define WIFIHEALTHCHECKERTHREAD_INCLUDE_H
+
+#include "../internal/04-thread/00-public/01-WiFiHealthCheckerThread.h"
+
+#endif // WIFIHEALTHCHECKERTHREAD_INCLUDE_H

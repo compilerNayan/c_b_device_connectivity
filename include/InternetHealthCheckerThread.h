@@ -1,0 +1,6 @@
+#ifndef INTERNETHEALTHCHECKERTHREAD_INCLUDE_H
+#define INTERNETHEALTHCHECKERTHREAD_INCLUDE_H
+
+#include "../internal/04-thread/00-public/02-InternetHealthCheckerThread.h"
+
+#endif // INTERNETHEALTHCHECKERTHREAD_INCLUDE_H

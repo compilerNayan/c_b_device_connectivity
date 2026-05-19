@@ -1,0 +1,6 @@
+#ifndef INETWORKSTATUSPROVIDER_PUBLIC_H
+#define INETWORKSTATUSPROVIDER_PUBLIC_H
+
+#include "../01-interface/02-INetworkStatusProvider.h"
+
+#endif // INETWORKSTATUSPROVIDER_PUBLIC_H
