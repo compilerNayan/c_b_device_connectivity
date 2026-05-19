@@ -7,8 +7,7 @@
 #include "../../02-wifi/01-interface/03-IWiFiConnectionManager.h"
 #include <StandardDefines.h>
 #include <ILogger.h>
-#include <osal/Core.h>
-#include <osal/WiFiClient.h>
+#include "util/InternetUtil.h"
 
 namespace {
 struct InternetCheckPair {
@@ -46,17 +45,14 @@ class InternetConnectionManager : public IInternetConnectionManager {
         const InternetCheckPair& pair = kInternetCheckPairs[nextInternetCheckPairIndex_];
         nextInternetCheckPairIndex_ = (nextInternetCheckPairIndex_ + 1) % kNumInternetCheckPairs;
 
-        OSAL_WiFiClient client;
-        if (client.Connect(pair.ip1, 53, 2000)) {
-            client.Stop();
+        if(InternetUtil::IsHostReachable(pair.ip1, 53, 2000)) {
             ULong currentId = internetStatusStore->GetInternetConnectionId();
             internetStatusStore->SetState(true, currentId != 0 ? currentId : OSAL_GenerateConnectionId());
             if (currentId == 0)
                 logger->Info(Tag::Untagged, StdString("[InternetConnection] Internet check succeeded via " + StdString(pair.ip1) + " (connection id set)"));
             return true;
         }
-        if (client.Connect(pair.ip2, 53, 2000)) {
-            client.Stop();
+        if (InternetUtil::IsHostReachable(pair.ip2, 53, 2000)) {
             ULong currentId = internetStatusStore->GetInternetConnectionId();
             internetStatusStore->SetState(true, currentId != 0 ? currentId : OSAL_GenerateConnectionId());
             if (currentId == 0)
