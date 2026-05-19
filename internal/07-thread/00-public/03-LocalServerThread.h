@@ -1,0 +1,6 @@
+#ifndef LOCALSERVERTHREAD_PUBLIC_H
+#define LOCALSERVERTHREAD_PUBLIC_H
+
+#include "../01-variant/03-LocalServerThread.h"
+
+#endif // LOCALSERVERTHREAD_PUBLIC_H
