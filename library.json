@@ -12,6 +12,6 @@
     "b_a_osal": "https://github.com/compilerNayan/b_a_osal.git"
   },
   "license": "MIT",
-  "frameworks": "arduino",
+  "frameworks": "*",
   "platforms": "*"
 }
