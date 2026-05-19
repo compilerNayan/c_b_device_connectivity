@@ -24,7 +24,7 @@ class WiFiConnectionManager : public IWiFiConnectionManager {
     /* @Autowired */
     Private ILoggerPtr logger;
     /* @Autowired */
-    Private IWiFiManagerPtr wiFiManager;
+    Private IWiFiManagerPtr wifiManager;
     /* @Autowired */
     Private IHotspotManagerPtr hotspotManager;
 
@@ -46,7 +46,11 @@ class WiFiConnectionManager : public IWiFiConnectionManager {
             wiFiConnectionId_ = GenericUtil::GenerateConnectionId();
             hotspotConnectionId_ = 0;
             UpdateStore(true, false, wiFiConnectionId_, 0);
-            logger->Info(Tag::Untagged, StdString("[WiFiConnection] WiFi connected successfully! IP Address: " + OSAL_WiFiGetLocalIpString()));
+            if(wifiManager->GetIPAddress().has_value()) {
+                logger->Info(Tag::Untagged, StdString("[WiFiConnection] WiFi connected successfully! IP Address: " + wifiManager->GetIPAddress().value()));
+            } else {
+                logger->Info(Tag::Untagged, StdString("[WiFiConnection] WiFi connected successfully! No IP Address available"));
+            }
             return true;
         }
         logger->Error(Tag::Untagged, StdString("[WiFiConnection] WiFi connection failed or timeout for SSID: " + ssid));
@@ -105,13 +109,17 @@ class WiFiConnectionManager : public IWiFiConnectionManager {
         logger->Info(Tag::Untagged, StdString("[WiFiConnection] Step 3: Starting hotspot (no WiFi connections available or all failed)"));
         logger->Info(Tag::Untagged, StdString("[WiFiConnection] Hotspot SSID: SmartBoard (open, no password)"));
 
-        hotspotManager->Disconnect();
-        hotspotManager->Start("SmartBoard", Optional<StdString>(nullptr));
+        hotspotManager->Stop();
+        hotspotManager->Start("SmartBoard", std::nullopt);
         if (hotspotManager->IsActive()) {
             hotspotConnectionId_ = GenericUtil::GenerateConnectionId();
             wiFiConnectionId_ = 0;
             UpdateStore(false, true, 0, hotspotConnectionId_);
-            logger->Info(Tag::Untagged, StdString("[WiFiConnection] Hotspot started successfully! AP IP Address: " + OSAL_WiFiGetSoftApIpString()));
+            if(hotspotManager->GetIPAddress().has_value()) {
+                logger->Info(Tag::Untagged, StdString("[WiFiConnection] Hotspot started successfully! AP IP Address: " + hotspotManager->GetIPAddress().value()));
+            } else {
+                logger->Info(Tag::Untagged, StdString("[WiFiConnection] Hotspot started successfully! No IP Address available"));
+            }
         } else {
             logger->Error(Tag::Untagged, StdString("[WiFiConnection] Failed to start hotspot"));
         }
@@ -129,17 +137,17 @@ class WiFiConnectionManager : public IWiFiConnectionManager {
     Public Virtual Void DisconnectNetwork() override {
         logger->Info(Tag::Untagged, StdString("[WiFiConnection] DisconnectNetwork() called"));
         hotspotManager->Stop();
-        wiFiManager->Disconnect();
+        wifiManager->Disconnect();
         UpdateStore(false, false, 0, 0);
         logger->Info(Tag::Untagged, StdString("[WiFiConnection] Network disconnected"));
     }
 
     Public Virtual Bool IsNetworkConnected() override {
-        return wiFiManager->IsConnected() || hotspotManager->IsActive();
+        return wifiManager->IsConnected() || hotspotManager->IsActive();
     }
 
     Public Virtual Bool IsWiFiConnected() override {
-        return wiFiManager->IsConnected();
+        return wifiManager->IsConnected();
     }
 
     Public Virtual Bool IsHotspotConnected() override {
@@ -173,7 +181,7 @@ class WiFiConnectionManager : public IWiFiConnectionManager {
     Public Virtual Void RestartNetwork() override {
         logger->Info(Tag::Untagged, StdString("[WiFiConnection] RestartNetwork() called"));
         DisconnectNetwork();
-        ThreadUtil::Sleep(1000);
+        Thread::Sleep(1000);
         logger->Info(Tag::Untagged, StdString("[WiFiConnection] Reconnecting..."));
         ConnectNetwork();
     }
