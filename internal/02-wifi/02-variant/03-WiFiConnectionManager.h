@@ -1,12 +1,12 @@
-#ifdef ARDUINO
+#ifdef ESP_PLATFORM
 #ifndef WIFICONNECTIONMANAGER_H
 #define WIFICONNECTIONMANAGER_H
 
 #include "../01-interface/03-IWiFiConnectionManager.h"
 #include "../01-interface/01-IWiFiConnectionStatusStore.h"
 #include <StandardDefines.h>
-#include <cpp_utils/StringUtils.h>
-#include <ILogger.h>
+#include "util/StringUtils.h"
+#include "logger/ILogger.h"
 #include "../../../endpoint/service/IWiFiService.h"
 #include "../../../endpoint/entity/WiFiCredentials.h"
 

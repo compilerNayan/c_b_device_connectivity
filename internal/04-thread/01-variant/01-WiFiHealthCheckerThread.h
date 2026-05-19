@@ -2,8 +2,8 @@
 #define WIFIHEALTHCHECKERTHREAD_H
 
 #include <StandardDefines.h>
-#include <IRunnable.h>
-#include <osal/Core.h>
+#include "threading/IRunnable.h"    
+#include "Thread.h"
 
 #include "../../02-wifi/00-public/02-IWiFiConnectionManager.h"
 

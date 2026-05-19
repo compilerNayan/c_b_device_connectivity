@@ -2,8 +2,8 @@
 #define INTERNETHEALTHCHECKERTHREAD_H
 
 #include <StandardDefines.h>
-#include <IRunnable.h>
-#include <osal/Core.h>
+#include "threading/IRunnable.h"
+#include "Thread.h"
 
 #include "../../03-internet/00-public/02-IInternetConnectionManager.h"
 
