@@ -1,4 +1,4 @@
-#ifdef ARDUINO
+#ifdef ESP_PLATFORM
 #ifndef INTERNETCONNECTIONMANAGER_H
 #define INTERNETCONNECTIONMANAGER_H
 
@@ -6,7 +6,7 @@
 #include "../01-interface/01-IInternetConnectionStatusStore.h"
 #include "../../02-wifi/01-interface/03-IWiFiConnectionManager.h"
 #include <StandardDefines.h>
-#include <ILogger.h>
+#include "logger/ILogger.h"
 #include "util/InternetUtil.h"
 
 namespace {
@@ -126,4 +126,4 @@ class InternetConnectionManager : public IInternetConnectionManager {
 };
 
 #endif // INTERNETCONNECTIONMANAGER_H
-#endif // ARDUINO
+#endif // ESP_PLATFORM
