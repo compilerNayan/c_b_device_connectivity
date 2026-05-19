@@ -9,9 +9,7 @@
     "url": "https://github.com/compilerNayan/03_device_connectivity.git"
   },
   "dependencies": {
-    "springbootplusplus": "https://github.com/compilerNayan/springbootplusplus.git",
-    "01_osal": "https://github.com/compilerNayan/01_osal.git",
-    "02_cpp_utils": "https://github.com/compilerNayan/02_cpp_utils.git"
+    "b_a_osal": "https://github.com/compilerNayan/b_a_osal.git"
   },
   "license": "MIT",
   "frameworks": "arduino",
