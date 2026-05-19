@@ -1,12 +1,12 @@
 {
-  "name": "03_device_connectivity",
+  "name": "c_b_device_connectivity",
   "version": "1.0.0",
   "description": "A header-only Arduino/PlatformIO network library; includes cpp_logger",
   "keywords": ["arduino", "network", "utility"],
   "authors": [{"name": "Nayan"}],
   "repository": {
     "type": "git",
-    "url": "https://github.com/compilerNayan/03_device_connectivity.git"
+    "url": "https://github.com/compilerNayan/c_b_device_connectivity.git"
   },
   "dependencies": {
     "b_a_osal": "https://github.com/compilerNayan/b_a_osal.git"
