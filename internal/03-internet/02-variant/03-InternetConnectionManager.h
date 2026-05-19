@@ -8,6 +8,7 @@
 #include <StandardDefines.h>
 #include "logger/ILogger.h"
 #include "util/InternetUtil.h"
+#include "util/GenericUtil.h"
 
 namespace {
 struct InternetCheckPair {
@@ -47,14 +48,14 @@ class InternetConnectionManager : public IInternetConnectionManager {
 
         if(InternetUtil::IsHostReachable(pair.ip1, 53, 2000)) {
             ULong currentId = internetStatusStore->GetInternetConnectionId();
-            internetStatusStore->SetState(true, currentId != 0 ? currentId : OSAL_GenerateConnectionId());
+            internetStatusStore->SetState(true, currentId != 0 ? currentId : GenericUtil::GenerateConnectionId());
             if (currentId == 0)
                 logger->Info(Tag::Untagged, StdString("[InternetConnection] Internet check succeeded via " + StdString(pair.ip1) + " (connection id set)"));
             return true;
         }
         if (InternetUtil::IsHostReachable(pair.ip2, 53, 2000)) {
             ULong currentId = internetStatusStore->GetInternetConnectionId();
-            internetStatusStore->SetState(true, currentId != 0 ? currentId : OSAL_GenerateConnectionId());
+            internetStatusStore->SetState(true, currentId != 0 ? currentId : GenericUtil::GenerateConnectionId());
             if (currentId == 0)
                 logger->Info(Tag::Untagged, StdString("[InternetConnection] Internet check succeeded via " + StdString(pair.ip2) + " (connection id set)"));
             return true;
