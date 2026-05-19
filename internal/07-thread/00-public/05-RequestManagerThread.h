@@ -1,0 +1,6 @@
+#ifndef REQUESTMANAGERTHREAD_PUBLIC_H
+#define REQUESTMANAGERTHREAD_PUBLIC_H
+
+#include "../01-variant/05-RequestManagerThread.h"
+
+#endif // REQUESTMANAGERTHREAD_PUBLIC_H
