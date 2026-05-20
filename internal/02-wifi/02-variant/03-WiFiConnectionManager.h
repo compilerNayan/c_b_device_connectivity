@@ -111,6 +111,7 @@ class WiFiConnectionManager : public IWiFiConnectionManager {
 
         hotspotManager->Stop();
         hotspotManager->Start("SmartBoard", std::nullopt);
+        hotspotManager->WaitForStart(10000);
         if (hotspotManager->IsActive()) {
             hotspotConnectionId_ = GenericUtil::GenerateConnectionId();
             wiFiConnectionId_ = 0;

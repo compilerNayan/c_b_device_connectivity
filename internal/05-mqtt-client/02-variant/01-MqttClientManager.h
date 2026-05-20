@@ -3,6 +3,7 @@
 
 #include "../01-interface/01-IMqttClientManager.h"
 #include "server/IMqttClient.h"
+#include "IInternetConnectionStatusProvider.h"
 
 /* @Component */
 class MqttClientManager final : public IMqttClientManager {
