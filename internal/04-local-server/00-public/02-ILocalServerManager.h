@@ -1,6 +1,0 @@
-#ifndef ILOCALSERVERMANAGER_PUBLIC_H
-#define ILOCALSERVERMANAGER_PUBLIC_H
-
-#include "../01-interface/02-ILocalServerManager.h"
-
-#endif // ILOCALSERVERMANAGER_PUBLIC_H

@@ -1,16 +1,16 @@
-#ifndef CLOUD_SERVER_MANAGER_INTERNAL_H
-#define CLOUD_SERVER_MANAGER_INTERNAL_H
+#ifndef MQTTCLOUD_SERVER_MANAGER_INTERNAL_H
+#define MQTTCLOUD_SERVER_MANAGER_INTERNAL_H
 
-#include "../01-interface/02-ICloudServerManager.h"
-#include "../01-interface/01-ICloudServer.h"
+#include "../01-interface/01-IMqttClientManager.h"
+#include "server/IMqttClient.h"
 
 /* @Component */
-class CloudServerManager final : public ICloudServerManager {
-    Public CloudServerManager() = default;
-    Public Virtual ~CloudServerManager() override = default;
+class MqttClientManager final : public IMqttClientManager {
+    Public MqttClientManager() = default;
+    Public Virtual ~MqttClientManager() override = default;
 
     /* @Autowired */
-    Private ICloudServerPtr cloudServer;
+    Private IMqttClientPtr mqttClient;
 
     /* @Autowired */
     Private IInternetConnectionStatusProviderPtr internetConnectionStatusProvider;
@@ -18,16 +18,15 @@ class CloudServerManager final : public ICloudServerManager {
     // Track last known internet connection ID
     Private ULong lastInternetConnectionId = 0;
 
-    Public Virtual Void EnsureCloudServerConnectivity() override {
+    Public Virtual Void EnsureMqttClientConnectivity() override {
         if((PreCheck())) {
-            cloudServer->ReceiveMessage();
-            cloudServer->SendMessage();
+            mqttClient->SendMessage();
         }
     }
 
     Private Bool PreCheck() {
         // 1. Null checks
-        if (!cloudServer || !internetConnectionStatusProvider) {
+        if (!mqttClient || !internetConnectionStatusProvider) {
             return false;
         }
 
@@ -43,13 +42,13 @@ class CloudServerManager final : public ICloudServerManager {
 
         // 4. If last ID == 0 and now connected → restart server
         if (lastInternetConnectionId == 0 && currentId != 0) {
-            if (!cloudServer->Restart()) {
+            if (!mqttClient->RefreshConnection()) {
                 return false;
             }
         }
         // 5. If last ID != 0 and current ID != last ID → internet changed → restart server
         else if (lastInternetConnectionId != 0 && currentId != lastInternetConnectionId) {
-            if (!cloudServer->Restart()) {
+            if (!mqttClient->RefreshConnection()) {
                 return false;
             }
         }
@@ -58,14 +57,14 @@ class CloudServerManager final : public ICloudServerManager {
         lastInternetConnectionId = currentId;
 
         // 7. Ensure server is running
-        if (!cloudServer->IsRunning()) {
-            if (!cloudServer->Restart()) {
+        if (!mqttClient->IsConnected()) {
+            if (!mqttClient->RefreshConnection()) {
                 return false;
             }
         }
 
         // 8. Final return
-        return cloudServer->IsRunning();
+        return mqttClient->IsConnected();
     }
 };
 

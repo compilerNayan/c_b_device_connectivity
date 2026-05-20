@@ -1,33 +1,34 @@
-#ifndef LOCAL_SERVER_MANAGER_INTERNAL_H
-#define LOCAL_SERVER_MANAGER_INTERNAL_H
+#ifndef TCP_SERVER_MANAGER_INTERNAL_H
+#define TCP_SERVER_MANAGER_INTERNAL_H
 
-#include "../01-interface/02-ILocalServerManager.h"
-#include "../01-interface/01-ILocalServer.h"
+#include "server/ITcpServer.h"
 #include "IWiFiConnectionStatusProvider.h"
 
+#include "../01-interface/01-ITcpServerManager.h"
+
 /* @Component */
-class LocalServerManager final : public ILocalServerManager {
-    Public LocalServerManager() = default;
-    Public Virtual ~LocalServerManager() override = default;
+class TcpServerManager final : public ITcpServerManager {
+    Public TcpServerManager() = default;
+    Public Virtual ~TcpServerManager() override = default;
 
     /* @Autowired */
     Private IWiFiConnectionStatusProviderPtr wifiConnectionStatusProvider;
 
     /* @Autowired */
-    Private ILocalServerPtr localServer;
+    Private ITcpServerPtr tcpServer;
 
     // Track last known network connection ID
     Private ULong lastNetworkConnectionId = 0;
     
-    Public Virtual Void EnsureLocalServerConnectivity() override {
+    Public Virtual Void EnsureTcpServerConnectivity() override {
         if((PreCheck())) {
-            localServer->ReceiveMessage();
-            localServer->SendMessage();
+            tcpServer->ReceiveMessage();
+            tcpServer->SendMessage();
         }
     }
 
     Private Bool PreCheck() {
-        if (!localServer || !wifiConnectionStatusProvider) {
+        if (!tcpServer || !wifiConnectionStatusProvider) {
             return false;
         }
 
@@ -43,12 +44,12 @@ class LocalServerManager final : public ILocalServerManager {
         // Case 2: network reconnected (ID != 0)
         if (lastNetworkConnectionId == 0) {
             // Previously disconnected, now connected → restart server
-            if (!localServer->Restart()) {
+            if (!tcpServer->Restart()) {
                 return false;
             }
         } else if (currentId != lastNetworkConnectionId) {
             // Network changed → restart server
-            if (!localServer->Restart()) {
+            if (!tcpServer->Restart()) {
                 return false;
             }
         }
@@ -57,15 +58,15 @@ class LocalServerManager final : public ILocalServerManager {
         lastNetworkConnectionId = currentId;
 
         // Case 3: ensure server is running
-        if (!localServer->IsRunning()) {
-            if (!localServer->Restart()) {
+        if (!tcpServer->IsRunning()) {
+            if (!tcpServer->Restart()) {
                 return false;
             }
         }
 
-        return localServer->IsRunning();
+        return tcpServer->IsRunning();
     }
 
 };
 
-#endif // LOCAL_SERVER_MANAGER_INTERNAL_H
+#endif // TCP_SERVER_MANAGER_INTERNAL_H

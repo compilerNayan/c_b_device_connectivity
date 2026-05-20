@@ -1,0 +1,6 @@
+#ifndef IMQTTCLIENTMANAGER_PUBLIC_H
+#define IMQTTCLIENTMANAGER_PUBLIC_H
+
+#include "../01-interface/01-IMqttClientManager.h"
+
+#endif // IMQTTCLIENTMANAGER_PUBLIC_H

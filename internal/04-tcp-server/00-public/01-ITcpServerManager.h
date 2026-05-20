@@ -1,0 +1,6 @@
+#ifndef ITCPSERVERMANAGER_PUBLIC_H
+#define ITCPSERVERMANAGER_PUBLIC_H
+
+#include "../01-interface/01-ITcpServerManager.h"
+
+#endif // ITCPSERVERMANAGER_PUBLIC_H
