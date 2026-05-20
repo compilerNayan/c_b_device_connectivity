@@ -15,6 +15,9 @@ class CloudServerManager final : public ICloudServerManager {
     /* @Autowired */
     Private IInternetConnectionStatusProviderPtr internetConnectionStatusProvider;
 
+    // Track last known internet connection ID
+    Private ULong lastInternetConnectionId = 0;
+
     Public Virtual Void EnsureCloudServerConnectivity() override {
         if((PreCheck())) {
             cloudServer->ReceiveMessage();

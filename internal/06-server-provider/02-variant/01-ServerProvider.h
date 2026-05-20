@@ -4,8 +4,8 @@
 #include <StandardDefines.h>
 #include "communication/IServerProvider.h"
 
-#include "ILocalServer.h"
-#include "ICloudServer.h"
+#include "../../04-local-server/00-public/01-ILocalServer.h"
+#include "../../05-cloud-server/00-public/01-ICloudServer.h"
 
 /**
  * Provider class for managing server instances
