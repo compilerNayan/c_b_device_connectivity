@@ -45,12 +45,18 @@ class MqttClientManager final : public IMqttClientManager {
         if (lastInternetConnectionId == 0 && currentId != 0) {
             if (!mqttClient->RefreshConnection()) {
                 return false;
+            } else {
+                mqttClient->WaitForConnection(10000);
+                mqttClient->Subscribe("nknk32/sub");
             }
         }
         // 5. If last ID != 0 and current ID != last ID → internet changed → restart server
         else if (lastInternetConnectionId != 0 && currentId != lastInternetConnectionId) {
             if (!mqttClient->RefreshConnection()) {
                 return false;
+            } else {
+                mqttClient->WaitForConnection(10000);
+                mqttClient->Subscribe("nknk32/sub");
             }
         }
 
@@ -61,6 +67,10 @@ class MqttClientManager final : public IMqttClientManager {
         if (!mqttClient->IsConnected()) {
             if (!mqttClient->RefreshConnection()) {
                 return false;
+            }
+            else {
+                mqttClient->WaitForConnection(10000);
+                mqttClient->Subscribe("nknk32/sub");
             }
         }
 

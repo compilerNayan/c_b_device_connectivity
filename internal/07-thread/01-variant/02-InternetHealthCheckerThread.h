@@ -5,7 +5,11 @@
 #include "threading/IRunnable.h"
 #include "Thread.h"
 
+#include "clock/IClockSynchronizer.h"
+
 #include "../../03-internet/00-public/02-IInternetConnectionManager.h"
+#include "../../03-internet/00-public/01-InternetConnectionStatusProvider.h"
+
 
 /** Interval between checks (ms). Run() is called every loop; we only run the check when this much time has passed. */
 static constexpr ULong kInternetHealthCheckIntervalMs = 5000;
@@ -16,12 +20,21 @@ static constexpr ULong kInternetHealthCheckIntervalMs = 5000;
 class InternetHealthCheckerThread : public IRunnable {
     /* @Autowired */
     Private IInternetConnectionManagerPtr internetConnectionManager;
+    /* @Autowired */
+    Private IClockSynchronizerPtr clockSynchronizer;
+
+    /* @Autowired */
+    Private IInternetConnectionStatusProviderPtr internetConnectionStatusProvider;
+
     Private ULong lastRunMs_{0};
 
     Public Void Run() override {
         Thread::Sleep(7000);
         while (true) {
             internetConnectionManager->VerifyInternetConnectivity();
+            if (internetConnectionStatusProvider->IsInternetConnected()) {
+                clockSynchronizer->SyncIfNeeded();
+            }
             Thread::Sleep(kInternetHealthCheckIntervalMs);
         }
     }
