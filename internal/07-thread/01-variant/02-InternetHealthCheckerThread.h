@@ -7,9 +7,8 @@
 
 #include "clock/IClockSynchronizer.h"
 
+#include "../../03-internet/00-public/01-IInternetConnectionStatusProvider.h"
 #include "../../03-internet/00-public/02-IInternetConnectionManager.h"
-#include "../../03-internet/00-public/01-InternetConnectionStatusProvider.h"
-
 
 /** Interval between checks (ms). Run() is called every loop; we only run the check when this much time has passed. */
 static constexpr ULong kInternetHealthCheckIntervalMs = 5000;
