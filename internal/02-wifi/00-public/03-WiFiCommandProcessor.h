@@ -1,0 +1,6 @@
+#ifndef WIFICOMMANDPROCESSOR_PUBLIC_H
+#define WIFICOMMANDPROCESSOR_PUBLIC_H
+
+#include "../02-variant/04-WiFiCommandProcessor.h"
+
+#endif // WIFICOMMANDPROCESSOR_PUBLIC_H

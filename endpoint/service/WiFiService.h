@@ -7,7 +7,8 @@
 #include "../repository/WiFiConnectionRepository.h"
 #include "../entity/WiFiCredentials.h"
 #include "../entity/WiFiConnection.h"
-//#include "../IArduinoSpringBootApp.h"
+#include "pubsub/ICommandBus.h"
+#include <CommandRegistry.h>
 
 /* @Service */
 class WiFiService : public IWiFiService {
@@ -19,22 +20,15 @@ class WiFiService : public IWiFiService {
     /* @Autowired */
     WiFiConnectionRepositoryPtr wiFiConnectionRepository;
 
-    /* -- @Autowired */
-    //IArduinoSpringBootAppPtr arduinoSpringBootApp;
+    /* @Autowired */
+    ICommandBusPtr commandBus;
 
     // Helper method to check last connected WiFi and restart app if invalid
     Private Void CheckAndRestartIfNeeded() {
         optional<WiFiCredentials> lastWiFi = GetLastConnectedWiFi();
-        
-        // Check if last connected WiFi is not present or SSID is null/empty
-        if (!lastWiFi.has_value() || 
-            !lastWiFi.value().ssid.has_value() || 
-            lastWiFi.value().ssid.value().empty()) {
-            // Last connected WiFi is invalid, restart the app
-            /*if (arduinoSpringBootApp != nullptr) {
-                arduinoSpringBootApp->RestartApp();
-            } */
-        }
+        //Simply restart the WiFi as credentials are updated
+        logger->Info(Tag::Untagged, "Sending command to restart WiFi to apply new credentials");
+        commandBus->Publish(TOPIC_WIFI, Command(COMMAND_RESTART_WIFI, SENDER_API_SERVICE, "Restarting WiFi to apply new credentials"));
     }
 
     // Add WiFi credentials

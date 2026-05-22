@@ -6,6 +6,7 @@
 #include "Thread.h"
 
 #include "../../02-wifi/00-public/02-IWiFiConnectionManager.h"
+#include "../../02-wifi/00-public/03-WiFiCommandProcessor.h"
 
 /** Interval between checks (ms). Run() is called every loop; we only run the check when this much time has passed. */
 static constexpr ULong kWiFiHealthCheckIntervalMs = 2000;
@@ -17,10 +18,12 @@ class WiFiHealthCheckerThread : public IRunnable {
     /* @Autowired */
     Private IWiFiConnectionManagerPtr wiFiConnectionManager;
     Private ULong lastRunMs_{0};
+    Private WiFiCommandProcessorPtr wiFiCommandProcessor;
 
     Public Void Run() override {
         Thread::Sleep(3000);
         while (true) {
+            wifiCommandProcessor.ProcessCommands();
             wiFiConnectionManager->EnsureNetworkConnectivity();
             Thread::Sleep(kWiFiHealthCheckIntervalMs);
         }

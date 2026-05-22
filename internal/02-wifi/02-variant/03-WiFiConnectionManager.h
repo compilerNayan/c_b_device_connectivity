@@ -165,10 +165,6 @@ class WiFiConnectionManager : public IWiFiConnectionManager {
 
     Public Virtual Bool EnsureNetworkConnectivity() override {
         if (IsHotspotConnected()) {
-            if (!wiFiService->GetAllWiFiCredentials().empty()) {
-                logger->Info(Tag::Untagged, StdString("[WiFiConnection] EnsureNetworkConnectivity: on hotspot with saved credentials, restarting to try WiFi"));
-                RestartNetwork();
-            }
             return IsNetworkConnected();
         }
         if (IsWiFiConnected()) {
