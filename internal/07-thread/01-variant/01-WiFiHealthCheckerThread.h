@@ -16,15 +16,15 @@ static constexpr ULong kWiFiHealthCheckIntervalMs = 2000;
  */
 class WiFiHealthCheckerThread : public IRunnable {
     /* @Autowired */
-    Private IWiFiConnectionManagerPtr wiFiConnectionManager;
+    Private IWiFiConnectionManagerPtr wifiConnectionManager;
     Private ULong lastRunMs_{0};
-    Private WiFiCommandProcessorPtr wiFiCommandProcessor;
+    Private WiFiCommandProcessor wifiCommandProcessor;
 
     Public Void Run() override {
         Thread::Sleep(3000);
         while (true) {
             wifiCommandProcessor.ProcessCommands();
-            wiFiConnectionManager->EnsureNetworkConnectivity();
+            wifiConnectionManager->EnsureNetworkConnectivity();
             Thread::Sleep(kWiFiHealthCheckIntervalMs);
         }
     }

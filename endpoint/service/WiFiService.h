@@ -9,6 +9,7 @@
 #include "../entity/WiFiConnection.h"
 #include "pubsub/ICommandBus.h"
 #include <CommandRegistry.h>
+#include <logger/ILogger.h>
 
 /* @Service */
 class WiFiService : public IWiFiService {
@@ -22,6 +23,10 @@ class WiFiService : public IWiFiService {
 
     /* @Autowired */
     ICommandBusPtr commandBus;
+
+    /*--@Autowired--*/
+    ILoggerPtr logger;
+
 
     // Helper method to check last connected WiFi and restart app if invalid
     Private Void CheckAndRestartIfNeeded() {

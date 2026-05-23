@@ -6,6 +6,8 @@
 #include <CommandRegistry.h>
 #include <logger/ILogger.h>
 
+using std::to_string;
+
 class WiFiCommandProcessor final : public CommandProcessor {
 
     /* @Autowired */
@@ -19,15 +21,15 @@ class WiFiCommandProcessor final : public CommandProcessor {
     Public Virtual ~WiFiCommandProcessor() override = default;
 
     Public Virtual Void OnCommandReceived(const Command& cmd) override {
-        switch (cmd.command) {
+        switch (cmd.id) {
             case COMMAND_RESTART_WIFI:
                 logger->Info(Tag::Untagged, "Received command to restart WiFi connection, sender: " + to_string(cmd.senderId) + " with payload: " + cmd.payload);
                 connectionManager->RestartNetwork();
                 break;
             default:
-                logger->Warning(Tag::Untagged, "Received unknown command: " + to_string(cmd.command) + " from sender: " + to_string(cmd.senderId) + " with payload: " + cmd.payload);
+                logger->Warning(Tag::Untagged, "Received unknown command: " + to_string(cmd.id) + " from sender: " + to_string(cmd.senderId) + " with payload: " + cmd.payload);
                 break;
         }
     }
-}
+};
 #endif // WIFICOMMANDPROCESSOR_INTERNAL_H
