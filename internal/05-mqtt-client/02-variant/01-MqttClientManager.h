@@ -4,6 +4,8 @@
 #include "../01-interface/01-IMqttClientManager.h"
 #include "server/IMqttClient.h"
 #include "IInternetConnectionStatusProvider.h"
+#include "IFleetProvisioningService.h"
+#include "server/IDeviceService.h"
 
 /* @Component */
 class MqttClientManager final : public IMqttClientManager {
@@ -16,6 +18,12 @@ class MqttClientManager final : public IMqttClientManager {
     /* @Autowired */
     Private IInternetConnectionStatusProviderPtr internetConnectionStatusProvider;
 
+    /* @Autowired */
+    Private IFleetProvisioningServicePtr fleetProvisioningService;
+
+    /* @Autowired */
+    Private IDeviceServicePtr deviceService;
+
     // Track last known internet connection ID
     Private ULong lastInternetConnectionId = 0;
 
@@ -26,6 +34,11 @@ class MqttClientManager final : public IMqttClientManager {
     }
 
     Private Bool PreCheck() {
+        // 0. Check if device is enrolled
+        if (!fleetProvisioningService->IsEnrolled()) {
+            return false;
+        }
+
         // 1. Null checks
         if (!mqttClient || !internetConnectionStatusProvider) {
             return false;
@@ -41,13 +54,27 @@ class MqttClientManager final : public IMqttClientManager {
             return false;
         }
 
+        // 4. Get device identity profile
+        Val deviceIdentityProfileOpt = deviceService->GetDeviceIdentityProfile();
+        if (!deviceIdentityProfileOpt.has_value()) {
+            return false;
+        }
+
+        Val deviceIdentityProfile = deviceIdentityProfileOpt.value();
+
         // 4. If last ID == 0 and now connected → restart server
         if (lastInternetConnectionId == 0 && currentId != 0) {
             if (!mqttClient->RefreshConnection()) {
                 return false;
             } else {
                 mqttClient->WaitForConnection(10000);
-                mqttClient->Subscribe("nknk32/sub");
+                if(mqttClient->IsConnected()) {
+                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.commandTopic);
+                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.otaUpdateTopic);
+                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.featureFlagTopic);
+                } else {
+                    return false;
+                }
             }
         }
         // 5. If last ID != 0 and current ID != last ID → internet changed → restart server
@@ -56,7 +83,13 @@ class MqttClientManager final : public IMqttClientManager {
                 return false;
             } else {
                 mqttClient->WaitForConnection(10000);
-                mqttClient->Subscribe("nknk32/sub");
+                if(mqttClient->IsConnected()) {
+                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.commandTopic);
+                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.otaUpdateTopic);
+                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.featureFlagTopic);
+                } else {
+                    return false;
+                }
             }
         }
 
@@ -70,7 +103,13 @@ class MqttClientManager final : public IMqttClientManager {
             }
             else {
                 mqttClient->WaitForConnection(10000);
-                mqttClient->Subscribe("nknk32/sub");
+                if(mqttClient->IsConnected()) {
+                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.commandTopic);
+                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.otaUpdateTopic);
+                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.featureFlagTopic);
+                } else {
+                    return false;
+                }
             }
         }
 
