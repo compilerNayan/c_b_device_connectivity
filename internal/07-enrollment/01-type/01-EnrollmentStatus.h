@@ -3,6 +3,7 @@
 
 #include "StandardDefines.h"
 
+/* @Serializable */
 DefineStandardTypes(EnrollmentStatus)
 enum class EnrollmentStatus {
     NotStarted,

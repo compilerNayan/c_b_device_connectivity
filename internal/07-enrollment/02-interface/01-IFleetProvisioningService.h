@@ -2,7 +2,7 @@
 #define IFLEETPROVISIONINGSERVICE_H
 
 #include <StandardDefines.h>
-#include "../type/01-EnrollmentStatus.h"
+#include "../01-type/01-EnrollmentStatus.h"
 
 DefineStandardPointers(IFleetProvisioningService);
 class IFleetProvisioningService {
