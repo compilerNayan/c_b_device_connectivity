@@ -64,7 +64,7 @@ class MqttClientManager final : public IMqttClientManager {
 
         // 4. If last ID == 0 and now connected → restart server
         if (lastInternetConnectionId == 0 && currentId != 0) {
-            if (!mqttClient->RefreshConnection()) {
+            if (!mqttClient->RefreshConnection(deviceIdentityProfile)) {
                 return false;
             } else {
                 mqttClient->WaitForConnection(10000);
@@ -79,7 +79,7 @@ class MqttClientManager final : public IMqttClientManager {
         }
         // 5. If last ID != 0 and current ID != last ID → internet changed → restart server
         else if (lastInternetConnectionId != 0 && currentId != lastInternetConnectionId) {
-            if (!mqttClient->RefreshConnection()) {
+            if (!mqttClient->RefreshConnection(deviceIdentityProfile)) {
                 return false;
             } else {
                 mqttClient->WaitForConnection(10000);
@@ -98,7 +98,7 @@ class MqttClientManager final : public IMqttClientManager {
 
         // 7. Ensure server is running
         if (!mqttClient->IsConnected()) {
-            if (!mqttClient->RefreshConnection()) {
+            if (!mqttClient->RefreshConnection(deviceIdentityProfile)) {
                 return false;
             }
             else {

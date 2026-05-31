@@ -8,7 +8,9 @@
 
 /* @Component */
 class CloudServer final : public ICloudServer {
-    Public CloudServer() = default;
+    Public CloudServer() {
+        deviceIdentityProfile = deviceService->GetDeviceIdentityProfile();
+    };
     Public Virtual ~CloudServer() override = default;
 
     /* @Autowired */
@@ -20,42 +22,18 @@ class CloudServer final : public ICloudServer {
     Private Optional<DeviceIdentityProfileData> deviceIdentityProfile;
 
     Public Bool Start() override {
+        // Do nothing as MqttClient will be managed by MqttClientManager
         deviceIdentityProfile = deviceService->GetDeviceIdentityProfile();
-        if(!deviceIdentityProfile.has_value()) {
-            return false;
-        }
-        mqttClient->Connect(deviceIdentityProfile.value().mqttEndpoint, deviceIdentityProfile.value().thingName, deviceIdentityProfile.value().caCertificatePem, deviceIdentityProfile.value().clientCertificatePem, deviceIdentityProfile.value().clientPrivateKeyPem);
-        if(mqttClient->WaitForConnection(10000)) {
-            if(mqttClient->IsConnected()) { 
-                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.commandTopic);
-                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.otaUpdateTopic);
-                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.featureFlagTopic);
-            }
-            return true;
-        }
-        return false;
+        return mqttClient->IsConnected();        
     }
 
     Public Void Stop() override {
-        mqttClient->Disconnect();
+        // Do nothing as MqttClient will be managed by MqttClientManager
     }
 
     Public Bool Restart() override {
+        // Do nothing as MqttClient will be managed by MqttClientManager
         deviceIdentityProfile = deviceService->GetDeviceIdentityProfile();
-        if(!deviceIdentityProfile.has_value()) {
-            return false;
-        }
-        mqttClient->Disconnect();
-        Thread::Sleep(5000);
-        mqttClient->Connect(deviceIdentityProfile.value().mqttEndpoint, deviceIdentityProfile.value().thingName, deviceIdentityProfile.value().caCertificatePem, deviceIdentityProfile.value().clientCertificatePem, deviceIdentityProfile.value().clientPrivateKeyPem);
-        if(mqttClient->WaitForConnection(10000)) {
-            if(mqttClient->IsConnected()) { 
-                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.commandTopic);
-                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.otaUpdateTopic);
-                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.featureFlagTopic);
-                return true;
-            }
-        }
         return false;
     }
     
