@@ -5,8 +5,7 @@
 #include "IFleetProvisioningService.h"
 
 DefineStandardPointers(IEnrollmentController);
-class IEnrollmentController {
-    Public Virtual Void EnrollDevice() = 0;
+class IEnrollmentController {    
 
     Public Virtual EnrollmentStatus GetEnrollmentStatus() = 0;
 
