@@ -4,6 +4,7 @@
 #include <StandardDefines.h>
 #include "communication/ICloudServer.h"
 #include "server/IMqttClient.h"
+#include "server/IDeviceService.h"
 
 /* @Component */
 class CloudServer final : public ICloudServer {
@@ -12,11 +13,24 @@ class CloudServer final : public ICloudServer {
 
     /* @Autowired */
     Private IMqttClientPtr mqttClient;
+    
+    /* @Autowired */
+    Private IDeviceServicePtr deviceService;
+
+    Private Optional<DeviceIdentityProfileData> deviceIdentityProfile;
 
     Public Bool Start() override {
-        mqttClient->Connect();
+        deviceIdentityProfile = deviceService->GetDeviceIdentityProfile();
+        if(!deviceIdentityProfile.has_value()) {
+            return false;
+        }
+        mqttClient->Connect(deviceIdentityProfile.value().mqttEndpoint, deviceIdentityProfile.value().thingName, deviceIdentityProfile.value().caCertificatePem, deviceIdentityProfile.value().clientCertificatePem, deviceIdentityProfile.value().clientPrivateKeyPem);
         if(mqttClient->WaitForConnection(10000)) {
-            mqttClient->Subscribe("nknk32/sub");
+            if(mqttClient->IsConnected()) { 
+                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.commandTopic);
+                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.otaUpdateTopic);
+                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.featureFlagTopic);
+            }
             return true;
         }
         return false;
@@ -27,8 +41,22 @@ class CloudServer final : public ICloudServer {
     }
 
     Public Bool Restart() override {
-        mqttClient->Subscribe("nknk32/sub");
-        return mqttClient->RefreshConnection();
+        deviceIdentityProfile = deviceService->GetDeviceIdentityProfile();
+        if(!deviceIdentityProfile.has_value()) {
+            return false;
+        }
+        mqttClient->Disconnect();
+        Thread::Sleep(5000);
+        mqttClient->Connect(deviceIdentityProfile.value().mqttEndpoint, deviceIdentityProfile.value().thingName, deviceIdentityProfile.value().caCertificatePem, deviceIdentityProfile.value().clientCertificatePem, deviceIdentityProfile.value().clientPrivateKeyPem);
+        if(mqttClient->WaitForConnection(10000)) {
+            if(mqttClient->IsConnected()) { 
+                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.commandTopic);
+                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.otaUpdateTopic);
+                mqttClient->Subscribe(deviceIdentityProfile.value().subscribeTopics.featureFlagTopic);
+                return true;
+            }
+        }
+        return false;
     }
     
     Public Bool IsRunning() const override {
@@ -36,7 +64,11 @@ class CloudServer final : public ICloudServer {
     }
     
     Public IHttpRequestPtr ReceiveMessage() override {
-        CStdString path = "nknk32/sub";
+        if(!deviceIdentityProfile.has_value()) {
+            return nullptr;
+        }
+
+        CStdString path = deviceIdentityProfile.value().subscribeTopics.commandTopic;
         auto message = mqttClient->GetNextReceivedMessage(path);
         if (!message.has_value()) {
             return nullptr;
@@ -46,7 +78,11 @@ class CloudServer final : public ICloudServer {
     }
 
     Public Bool SendMessage(CStdString& requestId, CStdString& message) override {
-        CStdString path = "nknk32/pub";
+        if(!deviceIdentityProfile.has_value()) {
+            return false;
+        }
+
+        CStdString path = deviceIdentityProfile.value().publishTopics.statusTopic;
         MqttMessage mqttMessage = {
             .guid = requestId,
             .payload = message,
