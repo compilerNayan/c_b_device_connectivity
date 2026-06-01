@@ -25,29 +25,11 @@ class DeviceManagerThread : public IRunnable {
     Public Void Run() override {
         while (true) {
             deviceCommandProcessor.ProcessCommands();
-            ProcessRequests();
+            httpRequestProcessor->ProcessRequests();
             deviceManager->Loop();
             Thread::Sleep(100);
         }
     }
-
-    Private Bool ProcessRequests() {
-        if (httpRequestProcessor == nullptr) {
-            return false;
-        }
-        
-        Bool processedAny = false;
-        while (httpRequestProcessor->HasRequests()) {
-            if (httpRequestProcessor->ProcessRequest()) {
-                processedAny = true;
-            } else {
-                break;
-            }
-        }
-        
-        return processedAny;
-    }
-
 };
 
 #endif // DEVICEMANAGERTHREAD_H

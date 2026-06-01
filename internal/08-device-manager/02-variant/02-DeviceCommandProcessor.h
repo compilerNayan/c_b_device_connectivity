@@ -21,4 +21,6 @@ class DeviceCommandProcessor final : public CommandProcessor {
                 break;
         }
     }
-}
+};
+
+#endif // DEVICECOMMANDPROCESSOR_INTERNAL_H

@@ -14,4 +14,6 @@ class DeviceManager : public IDeviceManager {
     Public Virtual Void Loop() override {
 
     }
-}
+};
+
+#endif // DEVICEMANAGER_INTERNAL_H
