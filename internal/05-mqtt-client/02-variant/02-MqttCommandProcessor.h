@@ -30,4 +30,6 @@ class MqttCommandProcessor final : public CommandProcessor {
                 break;
         }
     }
-}
+};
+
+#endif // MQTTCOMMANDPROCESSOR_INTERNAL_H

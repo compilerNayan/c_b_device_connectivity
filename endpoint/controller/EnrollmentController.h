@@ -25,7 +25,7 @@ class EnrollmentController final : public IEnrollmentController {
     /* @PostMapping("/enroll") */
     Public Virtual EnrollmentStatus EnrollDevice() override {
         logger->Info(Tag::Untagged, "Sending command to enroll device");
-        commandBus->Publish(SENDER_MQTT_CLIENT, Command(COMMAND_ENROLL_DEVICE, SENDER_CONTROLLER, "Enrolling device"));
+        commandBus->Publish(TOPIC_MQTT_CLIENT, Command(COMMAND_ENROLL_DEVICE, SENDER_CONTROLLER, "Enrolling device"));
         Thread::Sleep(1000);
         return fleetProvisioningService->GetEnrollmentStatus();
     }
