@@ -3,6 +3,7 @@
 
 #include "IEnrollmentController.h"
 #include "pubsub/ICommandBus.h"
+#include "logger/ILogger.h"
 
 /* @RestController */
 /* @RequestMapping("/enrollment") */
@@ -13,6 +14,9 @@ class EnrollmentController final : public IEnrollmentController {
     /* @Autowired */
     Private ICommandBusPtr commandBus;
 
+    /* @Autowired */
+    Private ILoggerPtr logger;
+
     /* @GetMapping("/status") */
     Public Virtual EnrollmentStatus GetEnrollmentStatus() override {
         return fleetProvisioningService->GetEnrollmentStatus();
@@ -21,7 +25,7 @@ class EnrollmentController final : public IEnrollmentController {
     /* @PostMapping("/enroll") */
     Public Virtual EnrollmentStatus EnrollDevice() override {
         logger->Info(Tag::Untagged, "Sending command to enroll device");
-        commandBus->Publish(TOPIC_MQTT, Command(COMMAND_ENROLL_DEVICE, SENDER_ENROLLMENT_CONTROLLER, "Enrolling device"));
+        commandBus->Publish(SENDER_MQTT_CLIENT, Command(COMMAND_ENROLL_DEVICE, SENDER_CONTROLLER, "Enrolling device"));
         Thread::Sleep(1000);
         return fleetProvisioningService->GetEnrollmentStatus();
     }
