@@ -15,7 +15,7 @@ class MqttCommandProcessor final : public CommandProcessor {
     /* @Autowired */
     Private ILoggerPtr logger;
 
-    Public MqttCommandProcessor() : CommandProcessor(TOPIC_MQTT) {}
+    Public MqttCommandProcessor() : CommandProcessor(TOPIC_MQTT_CLIENT) {}
 
     Public Virtual ~MqttCommandProcessor() override = default;
 
