@@ -1,0 +1,6 @@
+#ifndef DEVICEMANAGERTHREAD_PUBLIC_H
+#define DEVICEMANAGERTHREAD_PUBLIC_H
+
+#include "../01-variant/06-DeviceManagerThread.h"
+
+#endif // DEVICEMANAGERTHREAD_PUBLIC_H
