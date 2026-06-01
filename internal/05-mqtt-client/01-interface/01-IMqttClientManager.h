@@ -8,6 +8,8 @@ class IMqttClientManager {
     Public Virtual ~IMqttClientManager() = default;
 
     Public Virtual Void EnsureMqttClientConnectivity() = 0;
+
+    Public Virtual Void EnrollDevice() = 0;
 };
 
 #endif // IMQTTCLIENTMANAGER_INTERNAL_H

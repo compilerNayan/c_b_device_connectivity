@@ -6,6 +6,7 @@
 #include "IInternetConnectionStatusProvider.h"
 #include "IFleetProvisioningService.h"
 #include "server/IDeviceService.h"
+#include "pubsub/ICommandBus.h"
 
 /* @Component */
 class MqttClientManager final : public IMqttClientManager {
@@ -24,6 +25,9 @@ class MqttClientManager final : public IMqttClientManager {
     /* @Autowired */
     Private IDeviceServicePtr deviceService;
 
+    /* @Autowired */
+    Private ICommandBusPtr commandBus;
+
     // Track last known internet connection ID
     Private ULong lastInternetConnectionId = 0;
 
@@ -31,6 +35,36 @@ class MqttClientManager final : public IMqttClientManager {
         if((PreCheck())) {
             mqttClient->SendMessage();
         }
+    }
+
+    Public Virtual Void EnrollDevice() override {
+        if (!EnrollmentPreCheck()) {
+            return;
+        }
+        fleetProvisioningService->EnrollDevice();
+    }
+
+    Private Bool EnrollmentPreCheck() {
+        // 0. Check if device is already enrolled
+        if (fleetProvisioningService->IsEnrolled()) {
+            return false;
+        }
+
+        // 1. Null checks
+        if (!fleetProvisioningService || !internetConnectionStatusProvider) {
+            return false;
+        }
+
+        // 2. Get current internet connection ID
+        ULong internetConnectionId = internetConnectionStatusProvider->GetInternetConnectionId();
+
+        // 3. If internet connection ID == 0 → network down
+        if (internetConnectionId == 0) {
+            return false;
+        }
+
+
+        return true;
     }
 
     Private Bool PreCheck() {
