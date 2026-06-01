@@ -16,16 +16,16 @@ class WiFiService : public IWiFiService {
     Public Virtual ~WiFiService() = default;
 
     /* @Autowired */
-    WiFiCredentialsRepositoryPtr wiFiCredentialsRepository;
+    Private WiFiCredentialsRepositoryPtr wiFiCredentialsRepository;
 
     /* @Autowired */
-    WiFiConnectionRepositoryPtr wiFiConnectionRepository;
+    Private WiFiConnectionRepositoryPtr wiFiConnectionRepository;
 
     /* @Autowired */
-    ICommandBusPtr commandBus;
+    Private ICommandBusPtr commandBus;
 
-    /*--@Autowired--*/
-    ILoggerPtr logger;
+    /* @Autowired */
+    Private ILoggerPtr logger;
 
 
     // Helper method to check last connected WiFi and restart app if invalid

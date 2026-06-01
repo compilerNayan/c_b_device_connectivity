@@ -24,6 +24,7 @@ class WiFiCommandProcessor final : public CommandProcessor {
         switch (cmd.id) {
             case COMMAND_RESTART_WIFI:
                 logger->Info(Tag::Untagged, "Received command to restart WiFi connection, sender: " + to_string(cmd.senderId) + " with payload: " + cmd.payload);
+                Thread::Sleep(1000);
                 connectionManager->RestartNetwork();
                 break;
             default:
