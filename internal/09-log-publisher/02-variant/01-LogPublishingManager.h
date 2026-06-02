@@ -36,21 +36,43 @@ class LogPublishingManager : public ILogPublishingManager {
         for (;;) {
             StdMap<ULongLong, StdString> logs = logBuffer->TakeLogsByApproxBytes(kApproxMaxBytesPerPublish);
             if (logs.empty()) return true;
-            String jsonLogs = GetLogsJson(logs);
+            StdString jsonLogs = GetLogsJson(logs);
             cloudServer->PublishLogs(jsonLogs);
         }
         return true;
     }
 
-    Private String GetLogsJson(const StdMap<ULongLong, StdString>& logs) {
-        String jsonLogs = "[";
+    Private StdString GetLogsJson(const StdMap<ULongLong, StdString>& logs) {
+        StdString jsonLogs = "[";
+
+        int logCount = logs.size();
+        int index = 0;
+
         
         for (const auto& log : logs) {
-            jsonLogs += "{\"" + log.first + " \": \"" + log.second + "\"},";
+
+            time_t nowSec = (time_t)log.first;
+            char timeBuf[24];
+            if (nowSec != (time_t)-1 && nowSec > 0) {
+                struct tm* t = localtime(&nowSec);
+                if (t && strftime(timeBuf, sizeof(timeBuf), "%Y-%m-%d %H:%M:%S", t) > 0) { /* ok */ }
+                else snprintf(timeBuf, sizeof(timeBuf), "(time?)");
+            } else {
+                snprintf(timeBuf, sizeof(timeBuf), "(no time)");
+            }
+            StdString timeStr = timeBuf;
+    
+
+
+            jsonLogs += "{\"" + timeStr + " \": \"" + log.second + "\"}";
+            index++;
+            if(index < logCount) {
+                jsonLogs += ",";
+            }
         }
 
         jsonLogs += "]";
-        return json.toString();
+        return jsonLogs;
     }
 };
 

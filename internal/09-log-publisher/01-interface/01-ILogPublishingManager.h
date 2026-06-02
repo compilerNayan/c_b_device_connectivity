@@ -6,6 +6,8 @@
 DefineStandardPointers(ILogPublishingManager)
 class ILogPublishingManager {
     Public Virtual ~ILogPublishingManager() = default;
+
+    Public Virtual Bool PublishLogs() = 0;
 };
 
 #endif /* ILOGPUBLISHINGMANAGER_INTERNAL_H */
