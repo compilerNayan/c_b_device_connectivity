@@ -1,0 +1,6 @@
+#ifndef LOGPUBLISHERTHREAD_PUBLIC_H
+#define LOGPUBLISHERTHREAD_PUBLIC_H
+
+#include "../03-thread/01-LogPublisherThread.h"
+
+#endif /* LOGPUBLISHERTHREAD_PUBLIC_H */

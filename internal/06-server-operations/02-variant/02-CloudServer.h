@@ -67,5 +67,14 @@ class CloudServer final : public ICloudServer {
         };
         return mqttClient->QueueMessageToSend(path, mqttMessage);
     }
+
+    Public Bool PublishLogs(CStdString logs) override {
+        CStdString path = deviceIdentityProfile.value().publishTopics.logsTopic;
+        MqttMessage mqttMessage = {
+            .guid = "logs",
+            .payload = logs,
+        };
+        return mqttClient->QueueMessageToSend(path, mqttMessage);
+    }
 };
 #endif // CLOUDSERVER_INTERNAL_H

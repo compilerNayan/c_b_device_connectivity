@@ -1,0 +1,6 @@
+#ifndef ILOGPUBLISHINGMANAGER_PUBLIC_H
+#define ILOGPUBLISHINGMANAGER_PUBLIC_H
+
+#include "../01-interface/01-ILogPublishingManager.h"
+
+#endif /* ILOGPUBLISHINGMANAGER_PUBLIC_H */

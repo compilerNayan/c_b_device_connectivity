@@ -25,9 +25,17 @@ class ServerProvider final : public IServerProvider {
     Public IServerPtr GetLocalServer() const override{
         return localServer;
     }
+    Public ILocalServerPtr GetLocalServerPtr() const override {
+        return localServer;
+    }
     Public IServerPtr GetCloudServer() const override {
         return cloudServer;
     }
+    Public ICloudServerPtr GetCloudServerPtr() const override {
+        return cloudServer;
+    }
+
+
 };
 
 #endif // SERVERPROVIDER_H
