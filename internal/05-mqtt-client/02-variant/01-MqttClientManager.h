@@ -1,8 +1,6 @@
 #ifndef MQTTCLOUD_SERVER_MANAGER_INTERNAL_H
 #define MQTTCLOUD_SERVER_MANAGER_INTERNAL_H
 
-#include <cstdio>
-
 #include "../01-interface/01-IMqttClientManager.h"
 #include "server/IMqttClient.h"
 #include "IInternetConnectionStatusProvider.h"
@@ -38,7 +36,7 @@ class MqttClientManager final : public IMqttClientManager {
 
     /** Stop ESP-IDF mqtt client so it does not auto-retry while internet is down. */
     Private Void StopMqttWhenNoInternet() {
-        if (mqttClient) {
+        if (mqttClient && mqttClient->IsClientStarted()) {
             mqttClient->Disconnect();
         }
         lastInternetConnectionId = 0;
