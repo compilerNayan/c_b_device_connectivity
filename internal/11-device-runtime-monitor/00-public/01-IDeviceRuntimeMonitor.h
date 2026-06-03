@@ -1,0 +1,6 @@
+#ifndef IDEVICERUNTIMEMONITOR_PUBLIC_H
+#define IDEVICERUNTIMEMONITOR_PUBLIC_H
+
+#include "../01-interface/01-IDeviceRuntimeMonitor.h"
+
+#endif // IDEVICERUNTIMEMONITOR_PUBLIC_H

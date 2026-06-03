@@ -1,0 +1,6 @@
+#ifndef IDEVICEDIAGNOSTICS_PUBLIC_H
+#define IDEVICEDIAGNOSTICS_PUBLIC_H
+
+#include "../01-interface/01-IDeviceDiagnostics.h"
+
+#endif // IDEVICEDIAGNOSTICS_PUBLIC_H

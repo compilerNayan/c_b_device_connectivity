@@ -1,0 +1,6 @@
+#ifndef DEVICE_RUNTIME_MONITOR_THREAD_INCLUDE_H
+#define DEVICE_RUNTIME_MONITOR_THREAD_INCLUDE_H
+
+#include "../internal/07-thread/00-public/07-DeviceRuntimeMonitorThread.h"
+
+#endif // DEVICE_RUNTIME_MONITOR_THREAD_INCLUDE_H
