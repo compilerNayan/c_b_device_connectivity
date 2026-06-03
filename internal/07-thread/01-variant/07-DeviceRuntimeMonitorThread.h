@@ -8,7 +8,7 @@
 #include "../../11-device-runtime-monitor/00-public/01-IDeviceRuntimeMonitor.h"
 
 /** How often to log full device state while running (ms). */
-static constexpr ULong kDeviceRuntimeMonitorIntervalMs = 60000;
+static constexpr ULong kDeviceRuntimeMonitorIntervalMs = 30*60000;
 
 /**
  * Periodically logs heap and per-task runtime stats for field monitoring.
