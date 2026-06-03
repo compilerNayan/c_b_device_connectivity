@@ -1,6 +1,8 @@
 #ifndef MQTTCLOUD_SERVER_MANAGER_INTERNAL_H
 #define MQTTCLOUD_SERVER_MANAGER_INTERNAL_H
 
+#include <cstdio>
+
 #include "../01-interface/01-IMqttClientManager.h"
 #include "server/IMqttClient.h"
 #include "IInternetConnectionStatusProvider.h"
@@ -30,6 +32,36 @@ class MqttClientManager final : public IMqttClientManager {
 
     // Track last known internet connection ID
     Private ULong lastInternetConnectionId = 0;
+
+    /** After network restore TLS can exceed 10s; also avoids hammering the broker. */
+    static constexpr Int kMqttReconnectWaitMs = 30000;
+
+    Private Bool TryReconnectAndSubscribe(
+            const DeviceIdentityProfileData& deviceIdentityProfile,
+            const char* reason) {
+        printf("[Nayan] MqttClientManager TryReconnect reason=%s lastId=%lu currentId=%lu connected=%d\n",
+               reason,
+               (unsigned long)lastInternetConnectionId,
+               (unsigned long)internetConnectionStatusProvider->GetInternetConnectionId(),
+               mqttClient->IsConnected() ? 1 : 0);
+
+        if (!mqttClient->RefreshConnection(deviceIdentityProfile)) {
+            printf("[Nayan] MqttClientManager RefreshConnection returned false\n");
+            return false;
+        }
+
+        if (!mqttClient->WaitForConnection(kMqttReconnectWaitMs)) {
+            printf("[Nayan] MqttClientManager WaitForConnection failed after %dms (client may still be connecting)\n",
+                   kMqttReconnectWaitMs);
+            return false;
+        }
+
+        mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.commandTopic);
+        mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.otaUpdateTopic);
+        mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.featureFlagTopic);
+        printf("[Nayan] MqttClientManager reconnect OK, subscribed\n");
+        return true;
+    }
 
     Public Virtual Void EnsureMqttClientConnectivity() override {
         if((PreCheck())) {
@@ -83,7 +115,10 @@ class MqttClientManager final : public IMqttClientManager {
 
         // 3. If current ID == 0 → network down
         if (currentId == 0) {
-            // Reset last ID to 0 and return false
+            if (lastInternetConnectionId != 0) {
+                printf("[Nayan] MqttClientManager PreCheck: internet lost (lastId=%lu -> 0)\n",
+                       (unsigned long)lastInternetConnectionId);
+            }
             lastInternetConnectionId = 0;
             return false;
         }
@@ -91,63 +126,42 @@ class MqttClientManager final : public IMqttClientManager {
         // 4. Get device identity profile
         Val deviceIdentityProfileOpt = deviceService->GetDeviceIdentityProfile();
         if (!deviceIdentityProfileOpt.has_value()) {
+            printf("[Nayan] MqttClientManager PreCheck: no device identity profile\n");
             return false;
         }
 
         Val deviceIdentityProfile = deviceIdentityProfileOpt.value();
 
-        // 4. If last ID == 0 and now connected → restart server
-        if (lastInternetConnectionId == 0 && currentId != 0) {
-            if (!mqttClient->RefreshConnection(deviceIdentityProfile)) {
+        Bool internetJustRestored = (lastInternetConnectionId == 0 && currentId != 0);
+        Bool internetChanged = (lastInternetConnectionId != 0 && currentId != lastInternetConnectionId);
+
+        if (internetJustRestored) {
+            printf("[Nayan] MqttClientManager PreCheck: internet restored currentId=%lu\n",
+                   (unsigned long)currentId);
+            // Mark internet seen so we do not re-enter "restored" and call full Refresh every loop.
+            lastInternetConnectionId = currentId;
+            if (!TryReconnectAndSubscribe(deviceIdentityProfile, "internet_restored")) {
                 return false;
-            } else {
-                mqttClient->WaitForConnection(10000);
-                if(mqttClient->IsConnected()) {
-                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.commandTopic);
-                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.otaUpdateTopic);
-                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.featureFlagTopic);
-                } else {
-                    return false;
-                }
             }
-        }
-        // 5. If last ID != 0 and current ID != last ID → internet changed → restart server
-        else if (lastInternetConnectionId != 0 && currentId != lastInternetConnectionId) {
-            if (!mqttClient->RefreshConnection(deviceIdentityProfile)) {
+        } else if (internetChanged) {
+            printf("[Nayan] MqttClientManager PreCheck: internet changed %lu -> %lu\n",
+                   (unsigned long)lastInternetConnectionId, (unsigned long)currentId);
+            lastInternetConnectionId = currentId;
+            if (!TryReconnectAndSubscribe(deviceIdentityProfile, "internet_changed")) {
                 return false;
-            } else {
-                mqttClient->WaitForConnection(10000);
-                if(mqttClient->IsConnected()) {
-                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.commandTopic);
-                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.otaUpdateTopic);
-                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.featureFlagTopic);
-                } else {
-                    return false;
-                }
             }
+        } else {
+            lastInternetConnectionId = currentId;
         }
 
-        // 6. Update last known ID
-        lastInternetConnectionId = currentId;
-
-        // 7. Ensure server is running
+        // 7. Ensure server is running (wait on in-flight connect; full refresh only when no client)
         if (!mqttClient->IsConnected()) {
-            if (!mqttClient->RefreshConnection(deviceIdentityProfile)) {
+            printf("[Nayan] MqttClientManager PreCheck: not connected, ensure running\n");
+            if (!TryReconnectAndSubscribe(deviceIdentityProfile, "ensure_connected")) {
                 return false;
-            }
-            else {
-                mqttClient->WaitForConnection(10000);
-                if(mqttClient->IsConnected()) {
-                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.commandTopic);
-                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.otaUpdateTopic);
-                    mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.featureFlagTopic);
-                } else {
-                    return false;
-                }
             }
         }
 
-        // 8. Final return
         return mqttClient->IsConnected();
     }
 };
