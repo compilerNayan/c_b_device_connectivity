@@ -2,6 +2,7 @@
 #define MQTTCLOUD_SERVER_MANAGER_INTERNAL_H
 
 #include "../01-interface/01-IMqttClientManager.h"
+#include "Thread.h"
 #include "server/IMqttClient.h"
 #include "IInternetConnectionStatusProvider.h"
 #include "IFleetProvisioningService.h"
@@ -56,6 +57,9 @@ class MqttClientManager final : public IMqttClientManager {
         }
 
         if (!mqttClient->WaitForConnection(kMqttReconnectWaitMs)) {
+            if (mqttClient->IsClientStarted()) {
+                mqttClient->Disconnect();
+            }
             return false;
         }
 
@@ -132,8 +136,9 @@ class MqttClientManager final : public IMqttClientManager {
         Bool internetChanged = (lastInternetConnectionId != 0 && currentId != lastInternetConnectionId);
 
         if (internetJustRestored) {
-            // Mark internet seen so we do not re-enter "restored" and call full Refresh every loop.
             lastInternetConnectionId = currentId;
+            // Brief settle after internet check before DNS/TLS to AWS IoT.
+            Thread::Sleep(3000);
             if (!TryReconnectAndSubscribe(deviceIdentityProfile, "internet_restored")) {
                 return false;
             }
