@@ -36,30 +36,34 @@ class MqttClientManager final : public IMqttClientManager {
     /** After network restore TLS can exceed 10s; also avoids hammering the broker. */
     static constexpr Int kMqttReconnectWaitMs = 30000;
 
+    /** Stop ESP-IDF mqtt client so it does not auto-retry while internet is down. */
+    Private Void StopMqttWhenNoInternet() {
+        if (mqttClient) {
+            mqttClient->Disconnect();
+        }
+        lastInternetConnectionId = 0;
+    }
+
+    Private Bool IsInternetAvailable() const {
+        return internetConnectionStatusProvider->IsInternetConnected()
+            && internetConnectionStatusProvider->GetInternetConnectionId() != 0;
+    }
+
     Private Bool TryReconnectAndSubscribe(
             const DeviceIdentityProfileData& deviceIdentityProfile,
             const char* reason) {
-        printf("[Nayan] MqttClientManager TryReconnect reason=%s lastId=%lu currentId=%lu connected=%d\n",
-               reason,
-               (unsigned long)lastInternetConnectionId,
-               (unsigned long)internetConnectionStatusProvider->GetInternetConnectionId(),
-               mqttClient->IsConnected() ? 1 : 0);
 
         if (!mqttClient->RefreshConnection(deviceIdentityProfile)) {
-            printf("[Nayan] MqttClientManager RefreshConnection returned false\n");
             return false;
         }
 
         if (!mqttClient->WaitForConnection(kMqttReconnectWaitMs)) {
-            printf("[Nayan] MqttClientManager WaitForConnection failed after %dms (client may still be connecting)\n",
-                   kMqttReconnectWaitMs);
             return false;
         }
 
         mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.commandTopic);
         mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.otaUpdateTopic);
         mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.featureFlagTopic);
-        printf("[Nayan] MqttClientManager reconnect OK, subscribed\n");
         return true;
     }
 
@@ -110,23 +114,17 @@ class MqttClientManager final : public IMqttClientManager {
             return false;
         }
 
-        // 2. Get current internet connection ID
-        ULong currentId = internetConnectionStatusProvider->GetInternetConnectionId();
-
-        // 3. If current ID == 0 → network down
-        if (currentId == 0) {
-            if (lastInternetConnectionId != 0) {
-                printf("[Nayan] MqttClientManager PreCheck: internet lost (lastId=%lu -> 0)\n",
-                       (unsigned long)lastInternetConnectionId);
-            }
-            lastInternetConnectionId = 0;
+        // 2–3. No internet → tear down mqtt (stops ESP-IDF auto-reconnect / BEFORE_CONNECT loop)
+        if (!IsInternetAvailable()) {
+            StopMqttWhenNoInternet();
             return false;
         }
+
+        ULong currentId = internetConnectionStatusProvider->GetInternetConnectionId();
 
         // 4. Get device identity profile
         Val deviceIdentityProfileOpt = deviceService->GetDeviceIdentityProfile();
         if (!deviceIdentityProfileOpt.has_value()) {
-            printf("[Nayan] MqttClientManager PreCheck: no device identity profile\n");
             return false;
         }
 
@@ -136,16 +134,12 @@ class MqttClientManager final : public IMqttClientManager {
         Bool internetChanged = (lastInternetConnectionId != 0 && currentId != lastInternetConnectionId);
 
         if (internetJustRestored) {
-            printf("[Nayan] MqttClientManager PreCheck: internet restored currentId=%lu\n",
-                   (unsigned long)currentId);
             // Mark internet seen so we do not re-enter "restored" and call full Refresh every loop.
             lastInternetConnectionId = currentId;
             if (!TryReconnectAndSubscribe(deviceIdentityProfile, "internet_restored")) {
                 return false;
             }
         } else if (internetChanged) {
-            printf("[Nayan] MqttClientManager PreCheck: internet changed %lu -> %lu\n",
-                   (unsigned long)lastInternetConnectionId, (unsigned long)currentId);
             lastInternetConnectionId = currentId;
             if (!TryReconnectAndSubscribe(deviceIdentityProfile, "internet_changed")) {
                 return false;
@@ -156,7 +150,6 @@ class MqttClientManager final : public IMqttClientManager {
 
         // 7. Ensure server is running (wait on in-flight connect; full refresh only when no client)
         if (!mqttClient->IsConnected()) {
-            printf("[Nayan] MqttClientManager PreCheck: not connected, ensure running\n");
             if (!TryReconnectAndSubscribe(deviceIdentityProfile, "ensure_connected")) {
                 return false;
             }
