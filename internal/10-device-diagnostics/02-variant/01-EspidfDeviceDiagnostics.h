@@ -12,6 +12,13 @@
 #include <esp_app_desc.h>
 #include <esp_heap_caps.h>
 
+#if defined(__has_include)
+#if __has_include("esp_private/system_internal.h")
+#include "esp_private/system_internal.h"
+#define DEVICE_DIAG_RESET_HINT_AVAILABLE 1
+#endif
+#endif
+
 #if (defined(CONFIG_ESP_COREDUMP_ENABLE) && CONFIG_ESP_COREDUMP_ENABLE) \
     || (defined(CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH) && CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH) \
     || (defined(CONFIG_ESP_COREDUMP_ENABLE_TO_UART) && CONFIG_ESP_COREDUMP_ENABLE_TO_UART)
@@ -134,10 +141,12 @@ class EspidfDeviceDiagnostics final : public IDeviceDiagnostics {
     }
 
     Private Void LogResetHint() {
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
-        const char* hint = esp_reset_reason_get_hint();
-        if (hint != nullptr && hint[0] != '\0') {
-            StdString line = "[DeviceDiagnostics] Reset hint: " + StdString(hint);
+#if defined(DEVICE_DIAG_RESET_HINT_AVAILABLE)
+        const esp_reset_reason_t hint = esp_reset_reason_get_hint();
+        if (hint != ESP_RST_UNKNOWN && hint != lastResetReason_) {
+            StdString line = "[DeviceDiagnostics] Reset hint: "
+                + ResetReasonToString(hint)
+                + " code=" + std::to_string(static_cast<Int>(hint));
             LogLine(LogLevel::Info, line);
         }
 #endif
@@ -167,17 +176,20 @@ class EspidfDeviceDiagnostics final : public IDeviceDiagnostics {
             return;
         }
 
-        StdString line = "[DeviceDiagnostics] Core dump: excCause=" + std::to_string(summary.exc_t.excCause)
-            + " excVaddr=0x" + std::to_string(summary.exc_t.excVaddr)
-            + " task=" + StdString(summary.exc_t.taskName);
+        StdString line = "[DeviceDiagnostics] Core dump: excCause="
+            + std::to_string(summary.ex_info.exc_cause)
+            + " excVaddr=0x" + std::to_string(summary.ex_info.exc_vaddr)
+            + " excPc=0x" + std::to_string(summary.exc_pc)
+            + " task=" + StdString(summary.exc_task);
         LogLine(LogLevel::Info, line);
 
+        const UInt depth = summary.exc_bt_info.depth;
         StdString bt = "[DeviceDiagnostics] Core dump backtrace depth="
-            + std::to_string(summary.exc_t.depth);
+            + std::to_string(depth);
         LogLine(LogLevel::Info, bt);
-        for (UInt i = 0; i < summary.exc_t.depth && i < 16; ++i) {
+        for (UInt i = 0; i < depth && i < 16; ++i) {
             StdString frame = "[DeviceDiagnostics]   #" + std::to_string(i)
-                + " pc=0x" + std::to_string(summary.exc_t.bt[i]);
+                + " pc=0x" + std::to_string(summary.exc_bt_info.bt[i]);
             LogLine(LogLevel::Info, frame);
         }
 #else
