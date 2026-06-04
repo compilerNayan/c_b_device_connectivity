@@ -14,6 +14,7 @@
 #include "wifi/IHotspotManager.h"
 #include "util/GenericUtil.h"
 #include "Thread.h"
+#include "IDeviceIdentityProvider.h"
 
 /* @Component */
 class WiFiConnectionManager : public IWiFiConnectionManager {
@@ -27,6 +28,8 @@ class WiFiConnectionManager : public IWiFiConnectionManager {
     Private IWiFiManagerPtr wifiManager;
     /* @Autowired */
     Private IHotspotManagerPtr hotspotManager;
+    /* @Autowired */
+    Private IDeviceIdentityProviderPtr deviceIdentityProvider;
 
     Private ULong wiFiConnectionId_ = 0;
     Private ULong hotspotConnectionId_ = 0;
@@ -109,8 +112,10 @@ class WiFiConnectionManager : public IWiFiConnectionManager {
         logger->Info(Tag::Untagged, StdString("[WiFiConnection] Step 3: Starting hotspot (no WiFi connections available or all failed)"));
         logger->Info(Tag::Untagged, StdString("[WiFiConnection] Hotspot SSID: SmartBoard (open, no password)"));
 
+        StdString ssid = "IoT_" + deviceIdentityProvider->GetSerialNumber();
+
         hotspotManager->Stop();
-        hotspotManager->Start("SmartBoard", std::nullopt);
+        hotspotManager->Start(ssid, std::nullopt);
         hotspotManager->WaitForStart(10000);
         if (hotspotManager->IsActive()) {
             hotspotConnectionId_ = GenericUtil::GenerateConnectionId();
