@@ -14,7 +14,7 @@
 #include "wifi/IHotspotManager.h"
 #include "util/GenericUtil.h"
 #include "Thread.h"
-#include "IDeviceIdentityProvider.h"
+#include "identity/IDeviceIdentityProvider.h"
 
 /* @Component */
 class WiFiConnectionManager : public IWiFiConnectionManager {
