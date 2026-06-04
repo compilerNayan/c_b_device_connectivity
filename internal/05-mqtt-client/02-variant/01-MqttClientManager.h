@@ -104,7 +104,7 @@ class MqttClientManager final : public IMqttClientManager {
         // 4. Release production MQTT/TLS heap before enrollment handshake (separate client).
         if (mqttClient && mqttClient->IsClientStarted()) {
             mqttClient->Disconnect();
-            Thread::Sleep(1500);
+            Thread::Sleep(2500);
         }
 
         return true;
