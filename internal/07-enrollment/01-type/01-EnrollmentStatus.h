@@ -15,6 +15,7 @@ enum class EnrollmentStatus {
     Failed_Subscription,
     Failed_CreateKeys,
     Failed_Provision,
+    Failed_InsufficientHeap,
     Failed_Unknown
 };
 
