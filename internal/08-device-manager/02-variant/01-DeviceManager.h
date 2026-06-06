@@ -8,12 +8,9 @@
 class DeviceManager : public IDeviceManager {
     Public Virtual ~DeviceManager() = default;
 
-    Public Virtual Void Setup() override {
-    }
+    Public Virtual Void Setup();
 
-    Public Virtual Void Loop() override {
-
-    }
+    Public Virtual Void Loop();
 };
 
 #endif // DEVICEMANAGER_INTERNAL_H
