@@ -13,6 +13,8 @@ class ICloudServer : public IServer {
     Public Virtual Bool PublishSecondPulse(CStdString payload) = 0;
 
     Public Virtual Bool PublishThirtyMinuteBucket(CStdString payload) = 0;
+
+    Public Virtual Bool PublishEnrollmentComplete(CStdString payload) = 0;
 };
 
 #endif // ICLUDSERVER_EXPORT_H

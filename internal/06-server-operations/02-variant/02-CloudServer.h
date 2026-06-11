@@ -90,6 +90,20 @@ class CloudServer final : public ICloudServer {
         return PublishWaterTelemetry("telemetry/bucket/30m", "bucket-30m", payload);
     }
 
+    Public Bool PublishEnrollmentComplete(CStdString payload) override {
+        CStdString tenantId = connectionDetailsProvider->GetTenantId();
+        CStdString thingName = connectionDetailsProvider->GetThingName();
+        if (tenantId.empty() || thingName.empty()) {
+            return false;
+        }
+        CStdString topic = BuildWaterTopic("lifecycle/enrolled");
+        MqttMessage mqttMessage = {
+            .guid = "lifecycle-enrolled",
+            .payload = payload,
+        };
+        return mqttClient->QueueMessageToSend(topic, mqttMessage);
+    }
+
     Private Bool PublishWaterTelemetry(CStdString suffix, CStdString guidPrefix, CStdString payload) {
         if (!mqttClient->IsConnected()) {
             return false;
