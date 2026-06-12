@@ -83,11 +83,17 @@ class CloudServer final : public ICloudServer {
     }
 
     Public Bool PublishSecondPulse(CStdString payload) override {
-        return PublishWaterTelemetry("telemetry/second", "second-pulse", payload);
+        if (!deviceIdentityProfile.has_value()) {
+            return false;
+        }
+        return PublishWaterTelemetry(deviceIdentityProfile.value().publishTopics.water1sBucketTopic, payload);
     }
 
     Public Bool PublishThirtyMinuteBucket(CStdString payload) override {
-        return PublishWaterTelemetry("telemetry/bucket/30m", "bucket-30m", payload);
+        if (!deviceIdentityProfile.has_value()) {
+            return false;
+        }
+        return PublishWaterTelemetry(deviceIdentityProfile.value().publishTopics.water30mBucketTopic, payload);
     }
 
     Public Bool PublishEnrollmentComplete(CStdString payload) override {
@@ -104,16 +110,10 @@ class CloudServer final : public ICloudServer {
         return mqttClient->QueueMessageToSend(topic, mqttMessage);
     }
 
-    Private Bool PublishWaterTelemetry(CStdString suffix, CStdString guidPrefix, CStdString payload) {
+    Private Bool PublishWaterTelemetry(CStdString topic, CStdString payload) {
         if (!mqttClient->IsConnected()) {
             return false;
         }
-        CStdString tenantId = connectionDetailsProvider->GetTenantId();
-        CStdString thingName = connectionDetailsProvider->GetThingName();
-        if (tenantId.empty() || thingName.empty()) {
-            return false;
-        }
-        CStdString topic = BuildWaterTopic(suffix);
         CStdString guid = guidPrefix + "-" + std::to_string(static_cast<unsigned long long>(time(nullptr)));
         MqttMessage mqttMessage = {
             .guid = guid,
