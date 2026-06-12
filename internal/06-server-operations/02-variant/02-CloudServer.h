@@ -97,12 +97,10 @@ class CloudServer final : public ICloudServer {
     }
 
     Public Bool PublishEnrollmentComplete(CStdString payload) override {
-        CStdString tenantId = connectionDetailsProvider->GetTenantId();
-        CStdString thingName = connectionDetailsProvider->GetThingName();
-        if (tenantId.empty() || thingName.empty()) {
+        if (!deviceIdentityProfile.has_value()) {
             return false;
         }
-        CStdString topic = BuildWaterTopic("lifecycle/enrolled");
+        CStdString topic = deviceIdentityProfile.value().publishTopics.lifecycleEnrolledTopic;
         MqttMessage mqttMessage = {
             .guid = "lifecycle-enrolled",
             .payload = payload,
@@ -120,11 +118,6 @@ class CloudServer final : public ICloudServer {
             .payload = payload,
         };
         return mqttClient->QueueMessageToSend(topic, mqttMessage);
-    }
-
-    Private CStdString BuildWaterTopic(CStdString suffix) const {
-        return "vswitch/water/" + connectionDetailsProvider->GetTenantId() + "/"
-             + connectionDetailsProvider->GetThingName() + "/" + suffix;
     }
 };
 #endif // CLOUDSERVER_INTERNAL_H
