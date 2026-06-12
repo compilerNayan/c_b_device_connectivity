@@ -112,7 +112,7 @@ class CloudServer final : public ICloudServer {
         if (!mqttClient->IsConnected()) {
             return false;
         }
-        CStdString guid = guidPrefix + "-" + std::to_string(static_cast<unsigned long long>(time(nullptr)));
+        CStdString guid = topic + "-" + std::to_string(static_cast<unsigned long long>(time(nullptr)));
         MqttMessage mqttMessage = {
             .guid = guid,
             .payload = payload,
