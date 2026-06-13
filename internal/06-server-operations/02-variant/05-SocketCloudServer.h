@@ -19,6 +19,7 @@
  *   water_pulse         - 1s flow sample (JSON object in data)
  *   water_30m           - 30-minute bucket (JSON object in data)
  *   lifecycle_enrolled  - enrollment complete (JSON object in data)
+ *   device_message      - device response (requestId + payload in data)
  */
 /* @Component */
 class SocketCloudServer final : public ICloudServer {
@@ -71,9 +72,14 @@ class SocketCloudServer final : public ICloudServer {
     }
 
     Public Bool SendMessage(CStdString& requestId, CStdString& message) override {
-        (void)requestId;
-        (void)message;
-        return false;
+        if (!cloudSocket || requestId.empty() || message.empty()) {
+            return false;
+        }
+
+        StdString dataJson =
+                "{\"requestId\":\"" + EscapeJsonString(requestId) + "\""
+                + ",\"payload\":" + StdString(message) + "}";
+        return QueueEnvelope("device_message", dataJson);
     }
 
     Public Bool PublishLogs(CStdString logs) override {
@@ -117,6 +123,34 @@ class SocketCloudServer final : public ICloudServer {
                 + ",\"serialNumber\":\"" + serialNumber + "\""
                 + ",\"data\":" + StdString(dataJson) + "}\n";
         return cloudSocket->QueueDataToSend(line);
+    }
+
+    Private static StdString EscapeJsonString(CStdString value) {
+        StdString escaped;
+        escaped.reserve(value.size());
+        for (char ch : value) {
+            switch (ch) {
+                case '\\':
+                    escaped += "\\\\";
+                    break;
+                case '"':
+                    escaped += "\\\"";
+                    break;
+                case '\n':
+                    escaped += "\\n";
+                    break;
+                case '\r':
+                    escaped += "\\r";
+                    break;
+                case '\t':
+                    escaped += "\\t";
+                    break;
+                default:
+                    escaped += ch;
+                    break;
+            }
+        }
+        return escaped;
     }
 };
 
