@@ -68,7 +68,19 @@ class SocketCloudServer final : public ICloudServer {
     }
 
     Public IHttpRequestPtr ReceiveMessage() override {
-        return nullptr;
+        if (!cloudSocket) {
+            return nullptr;
+        }
+
+        auto message = cloudSocket->ReceiveData();
+        if (!message.has_value()) {
+            return nullptr;
+        }
+
+        return IHttpRequest::GetRequest(
+                message.value().guid,
+                RequestSource::CloudServer,
+                message.value().payload);
     }
 
     Public Bool SendMessage(CStdString& requestId, CStdString& message) override {
