@@ -29,7 +29,7 @@ class ICloudSocket {
     /** Closes and reopens the last configured host/port. */
     Public Virtual Bool Reconnect() = 0;
 
-    /** Returns one received socket line as MqttMessage, if available. */
+    /** Returns one server downlink line as MqttMessage (guid=requestId, payload=payload). */
     Public Virtual Optional<MqttMessage> ReceiveData() = 0;
 };
 

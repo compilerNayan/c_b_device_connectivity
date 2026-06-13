@@ -13,10 +13,23 @@
 
 #include <StandardDefines.h>
 #include "logger/ILogger.h"
-#include "util/GuidUtil.h"
 #include "../01-interface/03-ICloudSocket.h"
 
 /* @Component */
+/**
+ * Downlink lines from server are parsed into MqttMessage:
+ *
+ * Preferred envelope (mirrors uplink device_message):
+ * {"v":1,"category":"server_message","requestId":"<id>","payload":<json>}\n
+ *
+ * Also accepted (flat form):
+ * {"requestId":"<id>","payload":<json>}\n
+ *
+ * Envelope with nested data (symmetric to uplink):
+ * {"v":1,"category":"server_message","data":{"requestId":"<id>","payload":<json>}}\n
+ *
+ * Lines without requestId/payload (e.g. {"ok":true}) are ignored.
+ */
 class CloudSocket final : public ICloudSocket {
     Private Static constexpr const char* kStreamHost =
             "water-meter-data-injection-env.eba-udmynr49.ap-south-1.elasticbeanstalk.com";
@@ -156,7 +169,10 @@ class CloudSocket final : public ICloudSocket {
         std::unique_lock<std::mutex> lock(receiveMutex_);
         Optional<StdString> line = TakeCompleteLineLocked();
         if (line.has_value()) {
-            return ToMqttMessage(line.value());
+            Optional<MqttMessage> message = ToMqttMessage(line.value());
+            if (message.has_value()) {
+                return message;
+            }
         }
 
         char buffer[256];
@@ -166,7 +182,11 @@ class CloudSocket final : public ICloudSocket {
                 receiveBuffer_.append(buffer, static_cast<size_t>(received));
                 line = TakeCompleteLineLocked();
                 if (line.has_value()) {
-                    return ToMqttMessage(line.value());
+                    Optional<MqttMessage> message = ToMqttMessage(line.value());
+                    if (message.has_value()) {
+                        return message;
+                    }
+                    continue;
                 }
                 continue;
             }
@@ -188,11 +208,117 @@ class CloudSocket final : public ICloudSocket {
         }
     }
 
-    Private static MqttMessage ToMqttMessage(CStdString payload) {
-        return {
-            .guid = GuidUtil::GenerateGuid(),
-            .payload = StdString(payload),
+    Private static Optional<MqttMessage> ParseDownlinkLine(CStdString line) {
+        if (line.empty()) {
+            return std::nullopt;
+        }
+
+        StdString json = StdString(line);
+        StdString requestId = ExtractJsonString(json, "requestId");
+        StdString payload = ExtractJsonRawValue(json, "payload");
+
+        if (requestId.empty()) {
+            StdString dataObject = ExtractJsonRawValue(json, "data");
+            if (!dataObject.empty()) {
+                requestId = ExtractJsonString(dataObject, "requestId");
+                payload = ExtractJsonRawValue(dataObject, "payload");
+            }
+        }
+
+        if (requestId.empty() || payload.empty()) {
+            return std::nullopt;
+        }
+
+        return MqttMessage{
+            .guid = requestId,
+            .payload = payload,
         };
+    }
+
+    Private static StdString ExtractJsonString(CStdString json, CStdString key) {
+        StdString pattern = "\"" + StdString(key) + "\":\"";
+        size_t pos = json.find(pattern);
+        if (pos == StdString::npos) {
+            return "";
+        }
+        pos += pattern.size();
+        size_t end = pos;
+        while (end < json.size()) {
+            if (json[end] == '\\' && end + 1 < json.size()) {
+                end += 2;
+                continue;
+            }
+            if (json[end] == '"') {
+                break;
+            }
+            ++end;
+        }
+        if (end >= json.size()) {
+            return "";
+        }
+        return json.substr(pos, end - pos);
+    }
+
+    Private static StdString ExtractJsonRawValue(CStdString json, CStdString key) {
+        StdString pattern = "\"" + StdString(key) + "\":";
+        size_t pos = json.find(pattern);
+        if (pos == StdString::npos) {
+            return "";
+        }
+        pos += pattern.size();
+        while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
+            ++pos;
+        }
+        if (pos >= json.size()) {
+            return "";
+        }
+
+        const char first = json[pos];
+        if (first == '"') {
+            size_t end = pos + 1;
+            while (end < json.size()) {
+                if (json[end] == '\\' && end + 1 < json.size()) {
+                    end += 2;
+                    continue;
+                }
+                if (json[end] == '"') {
+                    return json.substr(pos, end - pos + 1);
+                }
+                ++end;
+            }
+            return "";
+        }
+
+        if (first == '{' || first == '[') {
+            const char open = first;
+            const char close = (first == '{') ? '}' : ']';
+            Int depth = 0;
+            for (size_t i = pos; i < json.size(); ++i) {
+                if (json[i] == open) {
+                    ++depth;
+                } else if (json[i] == close) {
+                    --depth;
+                    if (depth == 0) {
+                        return json.substr(pos, i - pos + 1);
+                    }
+                }
+            }
+            return "";
+        }
+
+        size_t end = pos;
+        while (end < json.size() && json[end] != ',' && json[end] != '}') {
+            ++end;
+        }
+        StdString raw = json.substr(pos, end - pos);
+        while (!raw.empty() && (raw.back() == ' ' || raw.back() == '\t')) {
+            raw.pop_back();
+        }
+        return raw;
+    }
+
+    Private static Optional<MqttMessage> ToMqttMessage(CStdString line) {
+        return ParseDownlinkLine(line);
     }
 
     Private Optional<StdString> TakeCompleteLineLocked() {
