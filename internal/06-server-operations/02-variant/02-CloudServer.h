@@ -133,6 +133,54 @@ class CloudServer final : public ICloudServer {
         return mqttClient->QueueMessageToSend(topic, mqttMessage);
     }
 
+    Public Bool BeginEnrollment(CStdString payload) override {
+        if (!cloudSocket) {
+            return false;
+        }
+
+        StdString dataJson = payload.empty()
+                                     ? BuildDefaultEnrollmentRequestPayload()
+                                     : StdString(payload);
+        if (dataJson.empty()) {
+            return false;
+        }
+
+        if (!cloudSocket->IsSocketOpen()) {
+            if (!cloudSocket->OpenSocket("", 0)) {
+                return false;
+            }
+        }
+
+        StdString serialNumber = connectionDetailsProvider->GetSerialNumber();
+        if (serialNumber.empty()) {
+            return false;
+        }
+
+        StdString line =
+                "{\"v\":1,\"category\":\"enrollment_request\""
+                + ",\"tenantId\":\"\""
+                + ",\"serialNumber\":\"" + serialNumber + "\""
+                + ",\"data\":" + dataJson + "}\n";
+        if (!cloudSocket->QueueDataToSend(line)) {
+            return false;
+        }
+        cloudSocket->SendData();
+        return true;
+    }
+
+    Private StdString BuildDefaultEnrollmentRequestPayload() const {
+        StdString serialNumber = connectionDetailsProvider->GetSerialNumber();
+        StdString deviceType = connectionDetailsProvider->GetDeviceType();
+        StdString firmwareVersion = connectionDetailsProvider->GetFirmwareVersion();
+        if (serialNumber.empty()) {
+            return "";
+        }
+
+        return "{\"serialNumber\":\"" + serialNumber + "\""
+               + ",\"deviceType\":\"" + deviceType + "\""
+               + ",\"firmwareVersion\":\"" + firmwareVersion + "\"}";
+    }
+
     Private Bool PublishWaterTelemetry(CStdString topic, CStdString payload) {
         if (!mqttClient->IsConnected()) {
             return false;

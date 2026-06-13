@@ -19,6 +19,7 @@
  *   water_pulse         - 1s flow sample (JSON object in data)
  *   water_30m           - 30-minute bucket (JSON object in data)
  *   lifecycle_enrolled  - enrollment complete (JSON object in data)
+ *   enrollment_request  - device asks cloud to enroll it (JSON object in data)
  *   device_message      - device response (requestId + payload in data)
  */
 /* @Component */
@@ -109,6 +110,63 @@ class SocketCloudServer final : public ICloudServer {
     Public Bool PublishEnrollmentComplete(CStdString payload) override {
         deviceIdentityProfile = deviceService->GetDeviceIdentityProfile();
         return QueueEnvelope("lifecycle_enrolled", payload);
+    }
+
+    Public Bool BeginEnrollment(CStdString payload) override {
+        if (!cloudSocket) {
+            return false;
+        }
+
+        StdString dataJson = payload.empty()
+                                     ? BuildDefaultEnrollmentRequestPayload()
+                                     : StdString(payload);
+        if (dataJson.empty()) {
+            return false;
+        }
+
+        if (!cloudSocket->IsSocketOpen()) {
+            if (!cloudSocket->OpenSocket("", 0)) {
+                return false;
+            }
+        }
+
+        return QueuePreEnrollmentEnvelope("enrollment_request", dataJson);
+    }
+
+    Private Bool QueuePreEnrollmentEnvelope(CStdString category, CStdString dataJson) {
+        if (!cloudSocket || dataJson.empty()) {
+            return false;
+        }
+
+        StdString serialNumber = connectionDetailsProvider->GetSerialNumber();
+        if (serialNumber.empty()) {
+            return false;
+        }
+
+        StdString line =
+                "{\"v\":" + std::to_string(kProtocolVersion)
+                + ",\"category\":\"" + StdString(category) + "\""
+                + ",\"tenantId\":\"\""
+                + ",\"serialNumber\":\"" + serialNumber + "\""
+                + ",\"data\":" + StdString(dataJson) + "}\n";
+        if (!cloudSocket->QueueDataToSend(line)) {
+            return false;
+        }
+        cloudSocket->SendData();
+        return true;
+    }
+
+    Private StdString BuildDefaultEnrollmentRequestPayload() const {
+        StdString serialNumber = connectionDetailsProvider->GetSerialNumber();
+        StdString deviceType = connectionDetailsProvider->GetDeviceType();
+        StdString firmwareVersion = connectionDetailsProvider->GetFirmwareVersion();
+        if (serialNumber.empty()) {
+            return "";
+        }
+
+        return "{\"serialNumber\":\"" + EscapeJsonString(serialNumber) + "\""
+               + ",\"deviceType\":\"" + EscapeJsonString(deviceType) + "\""
+               + ",\"firmwareVersion\":\"" + EscapeJsonString(firmwareVersion) + "\"}";
     }
 
     Private Bool QueueEnvelope(CStdString category, CStdString dataJson) {

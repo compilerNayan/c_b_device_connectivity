@@ -15,6 +15,13 @@ class ICloudServer : public IServer {
     Public Virtual Bool PublishThirtyMinuteBucket(CStdString payload) = 0;
 
     Public Virtual Bool PublishEnrollmentComplete(CStdString payload) = 0;
+
+    /**
+     * Notify the cloud that this device is ready to be enrolled.
+     * Payload is JSON in data (e.g. serialNumber, deviceType, firmwareVersion).
+     * Empty payload is allowed; the server implementation may fill defaults.
+     */
+    Public Virtual Bool BeginEnrollment(CStdString payload) = 0;
 };
 
 #endif // ICLUDSERVER_EXPORT_H
