@@ -3,7 +3,9 @@
 
 #include <StandardDefines.h>
 #include <ctime>
+#include <cstdlib>
 #include "communication/ICloudServer.h"
+#include "../01-interface/03-ICloudSocket.h"
 #include "server/IMqttClient.h"
 #include "server/IDeviceService.h"
 #include "service/IConnectionDetailsProvider.h"
@@ -23,6 +25,9 @@ class CloudServer final : public ICloudServer {
 
     /* @Autowired */
     Private IConnectionDetailsProviderPtr connectionDetailsProvider;
+
+    /* @Autowired */
+    Private ICloudSocketPtr cloudSocket;
 
     Private Optional<DeviceIdentityProfileData> deviceIdentityProfile;
 
@@ -86,7 +91,25 @@ class CloudServer final : public ICloudServer {
         if (!deviceIdentityProfile.has_value()) {
             return false;
         }
-        return PublishWaterTelemetry(deviceIdentityProfile.value().publishTopics.water1sBucketTopic, payload);
+
+        CStdString tenantId = connectionDetailsProvider->GetTenantId();
+        CStdString serialNumber = connectionDetailsProvider->GetThingName();
+        if (serialNumber.empty()) {
+            serialNumber = deviceIdentityProfile.value().thingName;
+        }
+
+        double ml = ExtractJsonNumber(payload, "ml");
+        double cumulativeLiters = ExtractJsonNumber(payload, "cumulativeLiters");
+        CStdString ts = ExtractJsonString(payload, "ts");
+        if (ts.empty()) {
+            ts = FormatUtcSecondTimestamp();
+        }
+
+        CStdString streamPayload =
+                "{\"tenantId\":\"" + tenantId + "\",\"serialNumber\":\"" + serialNumber
+                + "\",\"ml\":" + std::to_string(ml) + ",\"cumulativeLiters\":"
+                + std::to_string(cumulativeLiters) + ",\"ts\":\"" + ts + "\"}\n";
+        return cloudSocket->QueueDataToSend(streamPayload);
     }
 
     Public Bool PublishThirtyMinuteBucket(CStdString payload) override {
@@ -119,6 +142,39 @@ class CloudServer final : public ICloudServer {
             .payload = payload,
         };
         return mqttClient->QueueMessageToSend(topic, mqttMessage);
+    }
+
+    Private static CStdString ExtractJsonString(CStdString json, CStdString key) {
+        CStdString pattern = "\"" + key + "\":\"";
+        size_t pos = json.find(pattern);
+        if (pos == CStdString::npos) {
+            return "";
+        }
+        pos += pattern.size();
+        size_t end = json.find("\"", pos);
+        if (end == CStdString::npos) {
+            return "";
+        }
+        return json.substr(pos, end - pos);
+    }
+
+    Private static double ExtractJsonNumber(CStdString json, CStdString key) {
+        CStdString pattern = "\"" + key + "\":";
+        size_t pos = json.find(pattern);
+        if (pos == CStdString::npos) {
+            return 0.0;
+        }
+        pos += pattern.size();
+        return strtod(json.c_str() + pos, nullptr);
+    }
+
+    Private static CStdString FormatUtcSecondTimestamp() {
+        time_t now = time(nullptr);
+        struct tm utc;
+        gmtime_r(&now, &utc);
+        char buffer[32];
+        strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%SZ", &utc);
+        return CStdString(buffer);
     }
 };
 #endif // CLOUDSERVER_INTERNAL_H
