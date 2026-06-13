@@ -27,6 +27,9 @@ class ICloudSocket {
 
     /** Closes and reopens the last configured host/port. */
     Public Virtual Bool Reconnect() = 0;
+
+    /** Returns one complete received line (without trailing newline), if available. */
+    Public Virtual Optional<StdString> ReceiveData() = 0;
 };
 
 #endif // ICLOUDSOCKET_INTERNAL_H

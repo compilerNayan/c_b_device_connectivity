@@ -29,7 +29,9 @@ class CloudSocket final : public ICloudSocket {
     Private StdString host_;
     Private Int port_;
     Private StdDeque<StdString> sendBuffer_;
+    Private StdString receiveBuffer_;
     Private mutable std::mutex sendMutex_;
+    Private mutable std::mutex receiveMutex_;
 
     Public CloudSocket() : clientSock_(-1), host_(kStreamHost), port_(kStreamPort) {}
 
@@ -94,6 +96,10 @@ class CloudSocket final : public ICloudSocket {
         }
         close(clientSock_);
         clientSock_ = -1;
+        {
+            std::lock_guard<std::mutex> lock(receiveMutex_);
+            receiveBuffer_.clear();
+        }
         return true;
     }
 
@@ -139,6 +145,63 @@ class CloudSocket final : public ICloudSocket {
     Public Virtual Bool Reconnect() override {
         CloseSocket();
         return OpenSocket(host_, port_);
+    }
+
+    Public Virtual Optional<StdString> ReceiveData() override {
+        if (clientSock_ < 0) {
+            return std::nullopt;
+        }
+
+        std::unique_lock<std::mutex> lock(receiveMutex_);
+        Optional<StdString> line = TakeCompleteLineLocked();
+        if (line.has_value()) {
+            return line;
+        }
+
+        char buffer[256];
+        while (true) {
+            ssize_t received = recv(clientSock_, buffer, sizeof(buffer), MSG_DONTWAIT);
+            if (received > 0) {
+                receiveBuffer_.append(buffer, static_cast<size_t>(received));
+                line = TakeCompleteLineLocked();
+                if (line.has_value()) {
+                    return line;
+                }
+                continue;
+            }
+            if (received == 0) {
+                lock.unlock();
+                CloseSocket();
+                return std::nullopt;
+            }
+            if (errno == EINTR) {
+                continue;
+            }
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                return std::nullopt;
+            }
+            lock.unlock();
+            LogError("Socket receive failed");
+            CloseSocket();
+            return std::nullopt;
+        }
+    }
+
+    Private Optional<StdString> TakeCompleteLineLocked() {
+        size_t newlinePos = receiveBuffer_.find('\n');
+        if (newlinePos == StdString::npos) {
+            return std::nullopt;
+        }
+
+        StdString line = receiveBuffer_.substr(0, newlinePos);
+        receiveBuffer_.erase(0, newlinePos + 1);
+        while (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        if (line.empty()) {
+            return TakeCompleteLineLocked();
+        }
+        return line;
     }
 
     Private Bool TransmitPayload(CStdString data) {
