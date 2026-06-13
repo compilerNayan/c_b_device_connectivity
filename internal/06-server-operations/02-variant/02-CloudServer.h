@@ -1,3 +1,4 @@
+#ifdef JDSLKJDLKS
 #ifndef CLOUDSERVER_INTERNAL_H
 #define CLOUDSERVER_INTERNAL_H
 
@@ -178,3 +179,4 @@ class CloudServer final : public ICloudServer {
     }
 };
 #endif // CLOUDSERVER_INTERNAL_H
+#endif // JDSLKJDLKS
