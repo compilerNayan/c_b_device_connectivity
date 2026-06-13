@@ -97,6 +97,7 @@ class CloudServer final : public ICloudServer {
     }
 
     Public Bool PublishEnrollmentComplete(CStdString payload) override {
+        deviceIdentityProfile = deviceService->GetDeviceIdentityProfile();
         if (!deviceIdentityProfile.has_value()) {
             return false;
         }
