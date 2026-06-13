@@ -23,7 +23,7 @@ class CloudSocket final : public ICloudSocket {
     Private Static constexpr Int kConnectTimeoutMs = 10000;
 
     /* @Autowired */
-    Private ILoggerPtr logger = Implementation<ILogger>::type::GetInstance();
+    Private ILoggerPtr logger;
 
     Private Int clientSock_;
     Private StdString host_;
@@ -173,21 +173,6 @@ class CloudSocket final : public ICloudSocket {
         }
     }
 
-    public:
-    static ICloudSocketPtr GetInstance() {
-        static ICloudSocketPtr instance(new CloudSocket());
-        return instance;
-    }
-};
-
-template <>
-struct Implementation<ICloudSocket> {
-    using type = CloudSocket;
-};
-
-template <>
-struct Implementation<ICloudSocket*> {
-    using type = CloudSocket*;
 };
 
 #endif // CLOUDSOCKET_INTERNAL_H

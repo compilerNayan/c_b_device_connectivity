@@ -25,7 +25,7 @@ class CloudSocketManager final : public ICloudSocketManager {
     Private IFleetProvisioningServicePtr fleetProvisioningService;
 
     /* @Autowired */
-    Private ILoggerPtr logger = Implementation<ILogger>::type::GetInstance();
+    Private ILoggerPtr logger;
 
     Private ULong lastInternetConnectionId = 0;
     Private Bool wasEnrolledOnLastCheck = false;
