@@ -13,6 +13,7 @@
 
 #include <StandardDefines.h>
 #include "logger/ILogger.h"
+#include "util/GuidUtil.h"
 #include "../01-interface/03-ICloudSocket.h"
 
 /* @Component */
@@ -147,7 +148,7 @@ class CloudSocket final : public ICloudSocket {
         return OpenSocket(host_, port_);
     }
 
-    Public Virtual Optional<StdString> ReceiveData() override {
+    Public Virtual Optional<MqttMessage> ReceiveData() override {
         if (clientSock_ < 0) {
             return std::nullopt;
         }
@@ -155,7 +156,7 @@ class CloudSocket final : public ICloudSocket {
         std::unique_lock<std::mutex> lock(receiveMutex_);
         Optional<StdString> line = TakeCompleteLineLocked();
         if (line.has_value()) {
-            return line;
+            return ToMqttMessage(line.value());
         }
 
         char buffer[256];
@@ -165,7 +166,7 @@ class CloudSocket final : public ICloudSocket {
                 receiveBuffer_.append(buffer, static_cast<size_t>(received));
                 line = TakeCompleteLineLocked();
                 if (line.has_value()) {
-                    return line;
+                    return ToMqttMessage(line.value());
                 }
                 continue;
             }
@@ -185,6 +186,13 @@ class CloudSocket final : public ICloudSocket {
             CloseSocket();
             return std::nullopt;
         }
+    }
+
+    Private static MqttMessage ToMqttMessage(CStdString payload) {
+        return {
+            .guid = GuidUtil::GenerateGuid(),
+            .payload = StdString(payload),
+        };
     }
 
     Private Optional<StdString> TakeCompleteLineLocked() {

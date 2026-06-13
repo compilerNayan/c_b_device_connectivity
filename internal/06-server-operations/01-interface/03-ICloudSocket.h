@@ -2,6 +2,7 @@
 #define ICLOUDSOCKET_INTERNAL_H
 
 #include <StandardDefines.h>
+#include "internal/05-server/01-type/01-MqttMessage.h"
 
 DefineStandardPointers(ICloudSocket)
 class ICloudSocket {
@@ -28,8 +29,8 @@ class ICloudSocket {
     /** Closes and reopens the last configured host/port. */
     Public Virtual Bool Reconnect() = 0;
 
-    /** Returns one complete received line (without trailing newline), if available. */
-    Public Virtual Optional<StdString> ReceiveData() = 0;
+    /** Returns one received socket line as MqttMessage, if available. */
+    Public Virtual Optional<MqttMessage> ReceiveData() = 0;
 };
 
 #endif // ICLOUDSOCKET_INTERNAL_H
