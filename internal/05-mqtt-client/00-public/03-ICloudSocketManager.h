@@ -1,0 +1,6 @@
+#ifndef ICLOUDSOCKETMANAGER_PUBLIC_H
+#define ICLOUDSOCKETMANAGER_PUBLIC_H
+
+#include "../01-interface/03-ICloudSocketManager.h"
+
+#endif // ICLOUDSOCKETMANAGER_PUBLIC_H
