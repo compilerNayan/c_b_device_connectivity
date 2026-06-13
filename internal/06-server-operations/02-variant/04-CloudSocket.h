@@ -26,9 +26,9 @@ class CloudSocket final : public ICloudSocket {
     Private ILoggerPtr logger = Implementation<ILogger>::type::GetInstance();
 
     Private Int clientSock_;
-    Private CStdString host_;
+    Private StdString host_;
     Private Int port_;
-    Private StdDeque<CStdString> sendBuffer_;
+    Private StdDeque<StdString> sendBuffer_;
     Private mutable std::mutex sendMutex_;
 
     Public CloudSocket() : clientSock_(-1), host_(kStreamHost), port_(kStreamPort) {}
@@ -49,7 +49,7 @@ class CloudSocket final : public ICloudSocket {
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
 
-        CStdString portText = std::to_string(port_);
+        StdString portText = std::to_string(port_);
         struct addrinfo* result = nullptr;
         Int resolveStatus =
                 getaddrinfo(host_.c_str(), portText.c_str(), &hints, &result);
@@ -106,7 +106,7 @@ class CloudSocket final : public ICloudSocket {
             return false;
         }
         std::lock_guard<std::mutex> lock(sendMutex_);
-        sendBuffer_.push_back(data);
+        sendBuffer_.push_back(StdString(data));
         return true;
     }
 
@@ -115,7 +115,7 @@ class CloudSocket final : public ICloudSocket {
             return;
         }
 
-        CStdString payload;
+        StdString payload;
         {
             std::lock_guard<std::mutex> lock(sendMutex_);
             if (sendBuffer_.empty()) {

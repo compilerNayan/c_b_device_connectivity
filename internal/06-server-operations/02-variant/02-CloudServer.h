@@ -92,20 +92,20 @@ class CloudServer final : public ICloudServer {
             return false;
         }
 
-        CStdString tenantId = connectionDetailsProvider->GetTenantId();
-        CStdString serialNumber = connectionDetailsProvider->GetThingName();
+        StdString tenantId = connectionDetailsProvider->GetTenantId();
+        StdString serialNumber = connectionDetailsProvider->GetThingName();
         if (serialNumber.empty()) {
             serialNumber = deviceIdentityProfile.value().thingName;
         }
 
         double ml = ExtractJsonNumber(payload, "ml");
         double cumulativeLiters = ExtractJsonNumber(payload, "cumulativeLiters");
-        CStdString ts = ExtractJsonString(payload, "ts");
+        StdString ts = ExtractJsonString(payload, "ts");
         if (ts.empty()) {
             ts = FormatUtcSecondTimestamp();
         }
 
-        CStdString streamPayload =
+        StdString streamPayload =
                 "{\"tenantId\":\"" + tenantId + "\",\"serialNumber\":\"" + serialNumber
                 + "\",\"ml\":" + std::to_string(ml) + ",\"cumulativeLiters\":"
                 + std::to_string(cumulativeLiters) + ",\"ts\":\"" + ts + "\"}\n";
@@ -144,15 +144,15 @@ class CloudServer final : public ICloudServer {
         return mqttClient->QueueMessageToSend(topic, mqttMessage);
     }
 
-    Private static CStdString ExtractJsonString(CStdString json, CStdString key) {
-        CStdString pattern = "\"" + key + "\":\"";
+    Private static StdString ExtractJsonString(CStdString json, CStdString key) {
+        StdString pattern = "\"" + StdString(key) + "\":\"";
         size_t pos = json.find(pattern);
-        if (pos == CStdString::npos) {
+        if (pos == StdString::npos) {
             return "";
         }
         pos += pattern.size();
         size_t end = json.find("\"", pos);
-        if (end == CStdString::npos) {
+        if (end == StdString::npos) {
             return "";
         }
         return json.substr(pos, end - pos);
@@ -168,13 +168,13 @@ class CloudServer final : public ICloudServer {
         return strtod(json.c_str() + pos, nullptr);
     }
 
-    Private static CStdString FormatUtcSecondTimestamp() {
+    Private static StdString FormatUtcSecondTimestamp() {
         time_t now = time(nullptr);
         struct tm utc;
         gmtime_r(&now, &utc);
         char buffer[32];
         strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%SZ", &utc);
-        return CStdString(buffer);
+        return StdString(buffer);
     }
 };
 #endif // CLOUDSERVER_INTERNAL_H
