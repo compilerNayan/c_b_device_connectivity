@@ -18,9 +18,6 @@ class MqttClientManager final : public IMqttClientManager {
     Public Virtual ~MqttClientManager() override = default;
 
     /* @Autowired */
-    Private IMqttClientPtr mqttClient;
-
-    /* @Autowired */
     Private IInternetConnectionStatusProviderPtr internetConnectionStatusProvider;
 
     /* @Autowired */
@@ -37,52 +34,14 @@ class MqttClientManager final : public IMqttClientManager {
     Private Bool wasEnrolledOnLastCheck = false;
 
     /** After network restore TLS can exceed 10s; also avoids hammering the broker. */
-    static constexpr Int kMqttReconnectWaitMs = 30000;
     static constexpr Int kPostEnrollmentSettleMs = 3000;
-
-    /** Stop ESP-IDF mqtt client so it does not auto-retry while internet is down. */
-    Private Void StopMqttWhenNoInternet() {
-        if (mqttClient && mqttClient->IsClientStarted()) {
-            mqttClient->Disconnect();
-        }
-        lastInternetConnectionId = 0;
-    }
 
     Private Bool IsInternetAvailable() const {
         return internetConnectionStatusProvider->IsInternetConnected()
             && internetConnectionStatusProvider->GetInternetConnectionId() != 0;
     }
 
-    Private Bool TryReconnectAndSubscribe(
-            const DeviceIdentityProfileData& deviceIdentityProfile,
-            const char* reason) {
-
-        if (strcmp(reason, "post_enrollment") == 0) {
-            Thread::Sleep(kPostEnrollmentSettleMs);
-        }
-
-        if (!mqttClient->RefreshConnection(deviceIdentityProfile)) {
-            fflush(stdout);
-            return false;
-        }
-
-        if (!mqttClient->WaitForConnection(kMqttReconnectWaitMs)) {
-            if (mqttClient->IsClientStarted()) {
-                mqttClient->Disconnect();
-            }
-            return false;
-        }
-
-        const Bool subCmd = mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.commandTopic);
-        const Bool subOta = mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.otaUpdateTopic);
-        const Bool subFf = mqttClient->Subscribe(deviceIdentityProfile.subscribeTopics.featureFlagTopic);
-        return subCmd && subOta && subFf;
-    }
-
     Public Virtual Void EnsureMqttClientConnectivity() override {
-        if((PreCheck())) {
-            mqttClient->SendMessage();
-        }
     }
 
     Public Virtual Void EnrollDevice() override {
@@ -111,12 +70,6 @@ class MqttClientManager final : public IMqttClientManager {
             return false;
         }
 
-        // 4. Release production MQTT/TLS heap before enrollment handshake (separate client).
-        if (mqttClient && mqttClient->IsClientStarted()) {
-            mqttClient->Disconnect();
-            Thread::Sleep(2500);
-        }
-
         return true;
     }
 
@@ -131,20 +84,15 @@ class MqttClientManager final : public IMqttClientManager {
 
         if (justEnrolled) {
             lastInternetConnectionId = 0;
-            if (mqttClient && mqttClient->IsClientStarted()) {
-                mqttClient->Disconnect();
-                Thread::Sleep(2500);
-            }
         }
 
         // 1. Null checks
-        if (!mqttClient || !internetConnectionStatusProvider) {
+        if (!internetConnectionStatusProvider) {
             return false;
         }
 
         // 2–3. No internet → tear down mqtt (stops ESP-IDF auto-reconnect / BEFORE_CONNECT loop)
         if (!IsInternetAvailable()) {
-            StopMqttWhenNoInternet();
             return false;
         }
 
@@ -181,13 +129,8 @@ class MqttClientManager final : public IMqttClientManager {
             lastInternetConnectionId = currentId;
         }
 
-        if (!mqttClient->IsConnected()) {
-            if (!TryReconnectAndSubscribe(deviceIdentityProfile, "ensure_connected")) {
-                return false;
-            }
-        }
 
-        return mqttClient->IsConnected();
+        return true;
     }
 };
 #endif // CLOUD_SERVER_MANAGER_INTERNAL_H
