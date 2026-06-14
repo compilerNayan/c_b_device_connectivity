@@ -208,6 +208,56 @@ class CloudSocket final : public ICloudSocket {
         }
     }
 
+    Private static StdString DecodeJsonStringEscapes(CStdString value) {
+        StdString decoded;
+        decoded.reserve(value.size());
+        for (size_t i = 0; i < value.size(); ++i) {
+            if (value[i] == '\\' && i + 1 < value.size()) {
+                const char next = value[i + 1];
+                switch (next) {
+                    case '"':
+                        decoded += '"';
+                        ++i;
+                        break;
+                    case '\\':
+                        decoded += '\\';
+                        ++i;
+                        break;
+                    case '/':
+                        decoded += '/';
+                        ++i;
+                        break;
+                    case 'b':
+                        decoded += '\b';
+                        ++i;
+                        break;
+                    case 'f':
+                        decoded += '\f';
+                        ++i;
+                        break;
+                    case 'n':
+                        decoded += '\n';
+                        ++i;
+                        break;
+                    case 'r':
+                        decoded += '\r';
+                        ++i;
+                        break;
+                    case 't':
+                        decoded += '\t';
+                        ++i;
+                        break;
+                    default:
+                        decoded += value[i];
+                        break;
+                }
+                continue;
+            }
+            decoded += value[i];
+        }
+        return decoded;
+    }
+
     Private static Optional<MqttMessage> ParseDownlinkLine(CStdString line) {
         if (line.empty()) {
             return std::nullopt;
@@ -282,7 +332,8 @@ class CloudSocket final : public ICloudSocket {
                     continue;
                 }
                 if (json[end] == '"') {
-                    return json.substr(pos, end - pos + 1);
+                    StdString encoded = json.substr(pos + 1, end - pos - 1);
+                    return DecodeJsonStringEscapes(encoded);
                 }
                 ++end;
             }
