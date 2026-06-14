@@ -192,7 +192,7 @@ class SocketCloudServer final : public ICloudServer {
             return false;
         }
         if (!deviceIdentityProfile.has_value()) {
-            LogQueueEnvelopeFailure(category, "deviceIdentityProfile missing");
+            //LogQueueEnvelopeFailure(category, "deviceIdentityProfile missing");
             return false;
         }
 
