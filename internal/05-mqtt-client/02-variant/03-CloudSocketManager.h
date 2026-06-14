@@ -82,12 +82,8 @@ class CloudSocketManager final : public ICloudSocketManager {
                     StopSocketWhenNoInternet();
                     return false;
                 }
-                if (!cloudSocket->IsSocketOpen()) {
-                    if (!TryOpenSocket("enrollment_in_progress")) {
-                        return false;
-                    }
-                }
-                return true;
+                // Keep the socket opened by BeginEnrollment; do not reconnect every tick.
+                return cloudSocket->IsSocketOpen();
             }
 
             if (cloudSocket && cloudSocket->IsSocketOpen()) {
