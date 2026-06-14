@@ -5,6 +5,7 @@
 #include <StandardDefines.h>
 #include "communication/ICloudServer.h"
 #include "../01-interface/03-ICloudSocket.h"
+#include "logger/ILogger.h"
 #include "server/IDeviceService.h"
 #include "service/IConnectionDetailsProvider.h"
 
@@ -39,6 +40,9 @@ class SocketCloudServer final : public ICloudServer {
 
     /* @Autowired */
     Private IConnectionDetailsProviderPtr connectionDetailsProvider;
+
+    /* @Autowired */
+    Private ILoggerPtr logger;
 
     Private Optional<DeviceIdentityProfileData> deviceIdentityProfile;
 
@@ -108,8 +112,17 @@ class SocketCloudServer final : public ICloudServer {
     }
 
     Public Bool PublishEnrollmentComplete(CStdString payload) override {
+        if (deviceService != nullptr) {
+            deviceService->Refresh();
+        }
         deviceIdentityProfile = deviceService->GetDeviceIdentityProfile();
-        return QueueEnvelope("lifecycle_enrolled", payload);
+        if (!QueueEnvelope("lifecycle_enrolled", payload)) {
+            return false;
+        }
+        if (cloudSocket != nullptr) {
+            cloudSocket->SendData();
+        }
+        return true;
     }
 
     Public Bool BeginEnrollment(CStdString payload) override {
@@ -170,10 +183,16 @@ class SocketCloudServer final : public ICloudServer {
     }
 
     Private Bool QueueEnvelope(CStdString category, CStdString dataJson) {
-        if (!cloudSocket || dataJson.empty()) {
+        if (!cloudSocket) {
+            LogQueueEnvelopeFailure(category, "cloudSocket is null");
+            return false;
+        }
+        if (dataJson.empty()) {
+            LogQueueEnvelopeFailure(category, "payload is empty");
             return false;
         }
         if (!deviceIdentityProfile.has_value()) {
+            LogQueueEnvelopeFailure(category, "deviceIdentityProfile missing");
             return false;
         }
 
@@ -182,7 +201,15 @@ class SocketCloudServer final : public ICloudServer {
         if (serialNumber.empty()) {
             serialNumber = deviceIdentityProfile.value().thingName;
         }
+        if (serialNumber.empty()) {
+            serialNumber = connectionDetailsProvider->GetSerialNumber();
+        }
         if (tenantId.empty() || serialNumber.empty()) {
+            LogQueueEnvelopeFailure(
+                    category,
+                    "tenantId or serialNumber missing tenantId=" + tenantId +
+                            " thingName=" + connectionDetailsProvider->GetThingName() +
+                            " serial=" + connectionDetailsProvider->GetSerialNumber());
             return false;
         }
 
@@ -192,7 +219,21 @@ class SocketCloudServer final : public ICloudServer {
                 + ",\"tenantId\":\"" + tenantId + "\""
                 + ",\"serialNumber\":\"" + serialNumber + "\""
                 + ",\"data\":" + StdString(dataJson) + "}\n";
-        return cloudSocket->QueueDataToSend(line);
+        if (!cloudSocket->QueueDataToSend(line)) {
+            LogQueueEnvelopeFailure(category, "QueueDataToSend failed");
+            return false;
+        }
+        return true;
+    }
+
+    Private Void LogQueueEnvelopeFailure(CStdString category, CStdString reason) const {
+        if (logger == nullptr) {
+            return;
+        }
+        logger->Warning(
+                Tag::Untagged,
+                "[SocketCloudServer] QueueEnvelope failed category=" + StdString(category) +
+                        " reason=" + StdString(reason));
     }
 
     Private static StdString EscapeJsonString(CStdString value) {
