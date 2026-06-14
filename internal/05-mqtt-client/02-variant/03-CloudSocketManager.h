@@ -9,6 +9,7 @@
 #include "IInternetConnectionStatusProvider.h"
 #include "IFleetProvisioningService.h"
 #include "logger/ILogger.h"
+#include "../../07-enrollment/01-type/01-EnrollmentStatus.h"
 
 /* @Component */
 class CloudSocketManager final : public ICloudSocketManager {
@@ -73,6 +74,22 @@ class CloudSocketManager final : public ICloudSocketManager {
         wasEnrolledOnLastCheck = enrolledNow;
 
         if (!enrolledNow) {
+            if (fleetProvisioningService->GetEnrollmentStatus() == EnrollmentStatus::InProgress) {
+                if (!cloudSocket || !internetConnectionStatusProvider) {
+                    return false;
+                }
+                if (!IsInternetAvailable()) {
+                    StopSocketWhenNoInternet();
+                    return false;
+                }
+                if (!cloudSocket->IsSocketOpen()) {
+                    if (!TryOpenSocket("enrollment_in_progress")) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
             if (cloudSocket && cloudSocket->IsSocketOpen()) {
                 cloudSocket->CloseSocket();
             }
