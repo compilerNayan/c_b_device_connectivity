@@ -4,6 +4,8 @@
 #include "IEnrollmentController.h"
 #include "pubsub/ICommandBus.h"
 #include "logger/ILogger.h"
+#include <CommandRegistry.h>
+#include "Thread.h"
 
 /* @RestController */
 /* @RequestMapping("/enrollment") */
