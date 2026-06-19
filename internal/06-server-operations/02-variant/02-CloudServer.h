@@ -133,6 +133,10 @@ class CloudServer final : public ICloudServer {
         return mqttClient->QueueMessageToSend(topic, mqttMessage);
     }
 
+    Public Bool PublishDeviceBoot(CStdString payload) override {
+        return false;
+    }
+
     Public Bool BeginEnrollment(CStdString payload) override {
         if (!cloudSocket) {
             return false;

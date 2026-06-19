@@ -22,6 +22,7 @@
  *   lifecycle_enrolled  - enrollment complete (JSON object in data)
  *   enrollment_request  - device asks cloud to enroll it (JSON object in data)
  *   device_message      - device response (requestId + payload in data)
+ *   device_boot         - device application started after MCU boot (JSON object in data)
  */
 /* @Component */
 class SocketCloudServer final : public ICloudServer {
@@ -109,6 +110,11 @@ class SocketCloudServer final : public ICloudServer {
 
     Public Bool PublishThirtyMinuteBucket(CStdString payload) override {
         return QueueEnvelope("water_30m", payload);
+    }
+
+    Public Bool PublishDeviceBoot(CStdString payload) override {
+        StdString dataJson = payload.empty() ? "{}" : StdString(payload);
+        return QueueEnvelope("device_boot", dataJson);
     }
 
     Public Bool PublishEnrollmentComplete(CStdString payload) override {

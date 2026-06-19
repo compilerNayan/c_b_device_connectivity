@@ -22,6 +22,12 @@ class ICloudServer : public IServer {
      * Empty payload is allowed; the server implementation may fill defaults.
      */
     Public Virtual Bool BeginEnrollment(CStdString payload) = 0;
+
+    /**
+     * Notify the cloud that the device application has started (MCU boot).
+     * Payload is JSON in data; use "{}" when no extra fields are needed.
+     */
+    Public Virtual Bool PublishDeviceBoot(CStdString payload) = 0;
 };
 
 #endif // ICLUDSERVER_EXPORT_H
